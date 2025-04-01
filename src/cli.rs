@@ -1,10 +1,30 @@
 use std::path::PathBuf;
 
 use clap::ValueHint::ExecutablePath;
-use clap::{Parser, arg};
+use clap::{Args, Parser, Subcommand, arg};
 
 #[derive(Debug, Parser)]
 pub struct Cli {
+    #[clap(long, short)]
+    pub raw_mode: bool,
+
+    #[command(subcommand)]
+    pub command: CliCommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum CliCommands {
+    /// Compares two optimizers.
+    Compare(CompareArgs),
+    /// Shows where your optimizer ranks in the leaderboard.
+    Leaderboard {
+        #[arg(value_hint=ExecutablePath)]
+        optimizer: PathBuf,
+    },
+}
+
+#[derive(Debug, Args)]
+pub struct CompareArgs {
     #[clap(long, default_value = "0.05")]
     pub alpha: f32,
 
@@ -16,9 +36,6 @@ pub struct Cli {
 
     #[clap(long, default_value = "10")]
     pub elo1: u32,
-
-    #[clap(long, short)]
-    pub raw_mode: bool,
 
     #[clap(long, default_value = "2")]
     pub max_games: u32,
