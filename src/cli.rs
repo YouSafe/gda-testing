@@ -1,13 +1,10 @@
 use std::path::PathBuf;
 
-use clap::ValueHint::ExecutablePath;
+use clap::ValueHint::{self, ExecutablePath};
 use clap::{Args, Parser, Subcommand, arg};
 
 #[derive(Debug, Parser)]
 pub struct Cli {
-    #[clap(long, short)]
-    pub raw_mode: bool,
-
     #[command(subcommand)]
     pub command: CliCommands,
 }
@@ -18,8 +15,8 @@ pub enum CliCommands {
     Compare(CompareArgs),
     /// Shows where your optimizer ranks in the leaderboard.
     Leaderboard {
-        #[arg(value_hint=ExecutablePath)]
-        optimizer: PathBuf,
+        #[arg(value_hint=ValueHint::CommandString)]
+        optimizer: String,
     },
 }
 

@@ -7,7 +7,7 @@ use std::{
 use petgraph::graph::UnGraph;
 use petgraph_gen::random_gnp_graph;
 use rand::{Rng, SeedableRng};
-use smol::{channel::Receiver, io};
+use smol::io;
 
 use crate::{
     cli::CompareArgs,

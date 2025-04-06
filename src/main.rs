@@ -1,8 +1,3 @@
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
-
 use clap::Parser;
 use cli::Cli;
 use smol::{channel, io};
@@ -23,7 +18,7 @@ fn main() -> io::Result<()> {
             smol::block_on(compare_mode::compare_mode(compare_args, is_interrupted))
         }
         cli::CliCommands::Leaderboard { optimizer } => smol::block_on(
-            leaderboard_mode::leaderboard_mode(optimizer, is_interrupted),
+            leaderboard_mode::leaderboard_mode(&shlex::split(&optimizer).unwrap(), is_interrupted),
         ),
     }
 }

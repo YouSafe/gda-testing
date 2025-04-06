@@ -26,18 +26,19 @@ while(true) {
 }
 ```
 
-And then you can start the optimizer via ....
+And then you can start the optimizer via `cargo run leaderboard 'path/to/optimizer'`.
+If your optimizer requires a complex command, make sure to use quotes `cargo run leaderboard 'complex command --with --args`.
 
 ### Advanced protocol
 
 To be a better behaved optimizer, we encourage you to implement the advanced protocol features.
 
 If you are processing a graph, and you suddenly receive a new graph:
-- Immediately finish the old graph and print it out.
+- Finish the current graph and print it out. Then start the new graph.
 - To implement this, run the optimizer and the `stdin.read_line()` loop on a separate threads. `read_line` is a blocking API in most languages.
 
-While processing a graph:
-- You can return an optimized graph multiple times. Only the latest output is counted.
+If you are processing a graph, and you receive a stream closing
+- Finish the current graph and print it out.
 
 ## Resources
 
