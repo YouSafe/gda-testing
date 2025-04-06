@@ -1,15 +1,13 @@
 use std::{
     process::{Command, Stdio},
-    sync::{
-        Arc,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::Arc,
     thread,
 };
 
 use petgraph::graph::UnGraph;
 use petgraph_gen::random_gnp_graph;
 use rand::{Rng, SeedableRng};
+use smol::{channel::Receiver, io};
 
 use crate::{
     cli::CompareArgs,
@@ -17,7 +15,10 @@ use crate::{
     sprt::{self, SPRT, elo_wld},
 };
 
-pub fn compare_mode(cli: CompareArgs, stop: Arc<AtomicBool>) {
+pub fn compare_mode(
+    cli: CompareArgs,
+    is_interrupted: impl Future<Output = ()>,
+) -> impl Future<Output = io::Result<()>> {
     let sprt = SPRT::new(cli.elo0, cli.elo1, cli.alpha, cli.beta);
 
     let mut wins = 0;
@@ -36,7 +37,7 @@ pub fn compare_mode(cli: CompareArgs, stop: Arc<AtomicBool>) {
 
     let mut current_instance = 0;
 
-    while current_instance < cli.max_games && !stop.load(Ordering::SeqCst) {
+    while current_instance < cli.max_games {
         let nodes = rng.gen_range(10..200);
         let probability = rng.gen_range(0.1..0.8);
 
@@ -164,4 +165,6 @@ pub fn compare_mode(cli: CompareArgs, stop: Arc<AtomicBool>) {
 
         current_instance += 1;
     }
+
+    async { Ok(()) }
 }

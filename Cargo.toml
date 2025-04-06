@@ -12,3 +12,4 @@ petgraph = "0.7.1"
 petgraph-gen = "0.2.0"
 rand = { version = "0.8.5", features = ["small_rng"] }
 anyhow = "1.0.97"
+smol = "2.0.2"
