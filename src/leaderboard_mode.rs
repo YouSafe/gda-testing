@@ -3,6 +3,7 @@ use std::{
     process::Stdio,
 };
 
+use clap::builder::styling::Style;
 use smol::{
     fs, future,
     io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader},
@@ -30,9 +31,10 @@ pub fn leaderboard_mode(
     let child_stderr = optimizer.stderr.take().expect("failed to get child stdout");
 
     let redirect_stderr = async {
+        let log_info_style = Style::new().dimmed();
         let mut lines = BufReader::new(child_stderr).lines();
         while let Some(line) = lines.next().await {
-            eprintln!("[Optimizer] {}", line?);
+            eprintln!("{log_info_style}[Optimizer] {}{log_info_style:#}", line?);
         }
         io::Result::Ok(())
     };
@@ -44,7 +46,7 @@ pub fn leaderboard_mode(
             .lines()
             .filter(|v| !matches!(v.as_deref(), Ok("")));
         for graph_path in graphs {
-            println!("Processing: {}", graph_path.display());
+            println!("\nOptimizing {}", graph_path.display());
             let graph = fs::read(graph_path)
                 .await?
                 .into_iter()
