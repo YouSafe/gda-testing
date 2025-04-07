@@ -1,13 +1,15 @@
-use std::path::{Path, PathBuf};
-
-use smol::{fs, future, io};
-
 use crate::{
     graph::Graph,
-    optimizer_protocol::{AllOk, Optimizer, OptimizerResponse},
+    leaderboard::run_statistics::{CrossingStatistic, SingleRun},
+    optimizer_protocol::{Optimizer, OptimizerResponse},
+};
+use smol::{fs, future, io};
+use std::{
+    path::{Path, PathBuf},
+    time::Instant,
 };
 
-pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<()>> {
+pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<SingleRun>> {
     println!("Starting {:?}", command);
     let mut optimizer = Optimizer::new(&command, "Optimizer".to_string());
     let redirect_stderr = optimizer.redirect_stderr();
@@ -15,7 +17,11 @@ pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<()>>
     let graphs = collect_graphs(Path::new("./graphs"))
         .expect("./graphs folder should exist and be full of graphs");
     let run_optimizer = async move {
-        for graph_path in graphs {
+        let mut run = SingleRun::new();
+
+        for (graph_path, graph_name) in graphs {
+            let graph_statistics = run.new_graph(graph_name);
+            let start_time = Instant::now();
             println!("\nOptimizing {}", graph_path.display());
             let graph = fs::read(graph_path)
                 .await?
@@ -32,35 +38,51 @@ pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<()>>
                 };
                 let num_edge_crossings = graph.crossings();
                 println!("Max edge crossing: {}", num_edge_crossings.max_per_edge);
+                graph_statistics.crossings.push(CrossingStatistic {
+                    max_per_edge: num_edge_crossings.max_per_edge,
+                    duration: start_time.elapsed(),
+                });
             }
         }
 
-        Ok(())
+        io::Result::Ok(run)
     };
 
     async {
-        _ = future::zip(run_optimizer, redirect_stderr).await.all_ok()?;
-        Ok(())
+        let (run, b) = future::zip(run_optimizer, redirect_stderr).await;
+        let (run, _) = (run?, b?);
+        Ok(run)
     }
 }
 
 /// Collects all graphs for this run, and returns them in a sorted order
-fn collect_graphs(dir: &Path) -> std::io::Result<Vec<PathBuf>> {
-    fn collect_graphs_rec(dir: &Path, graphs: &mut Vec<PathBuf>) -> std::io::Result<()> {
+fn collect_graphs(dir: &Path) -> std::io::Result<Vec<(PathBuf, String)>> {
+    fn collect_graphs_rec(
+        dir: &Path,
+        name: &str,
+        graphs: &mut Vec<(PathBuf, String)>,
+    ) -> std::io::Result<()> {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
+            let name = format!(
+                "{name}/{}",
+                entry
+                    .file_name()
+                    .into_string()
+                    .expect("Paths should not have non UTF-8 characters")
+            );
             if path.is_dir() {
-                collect_graphs_rec(&path, graphs)?;
+                collect_graphs_rec(&path, &name, graphs)?;
             } else if path.is_file() {
-                graphs.push(path);
+                graphs.push((path, name));
             }
         }
         Ok(())
     }
 
     let mut graphs = Vec::new();
-    collect_graphs_rec(dir, &mut graphs)?;
+    collect_graphs_rec(dir, "", &mut graphs)?;
     graphs.sort();
     Ok(graphs)
 }

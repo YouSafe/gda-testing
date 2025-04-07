@@ -27,8 +27,8 @@ while(true) {
 }
 ```
 
-And then you can start the optimizer via `cargo run leaderboard 'path/to/optimizer'`.
-If your optimizer requires a complex command, make sure to use quotes `cargo run leaderboard 'complex command --with --args`.
+And then you can start the optimizer via `cargo run leaderboard 'name' 'path/to/optimizer'`.
+If your optimizer requires a complex command, make sure to use quotes `cargo run leaderboard 'name' 'complex command --with --args`.
 
 ### Advanced Protocol
 

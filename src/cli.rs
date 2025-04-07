@@ -13,8 +13,11 @@ pub enum CliCommands {
     Compare(CompareArgs),
     /// Shows where your optimizer ranks in the leaderboard.
     Leaderboard {
+        /// Name for leaderboard
+        name: String,
         #[arg(value_hint=ValueHint::CommandString)]
         optimizer: String,
+        // TODO: A --filter and -f would be so useful
     },
 }
 
