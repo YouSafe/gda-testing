@@ -23,22 +23,25 @@ while(true) {
 
     // Print the optimized graph back, and be ready for the next input
     println!(json_graph_optimized);
+    println!("DONE");
 }
 ```
 
 And then you can start the optimizer via `cargo run leaderboard 'path/to/optimizer'`.
 If your optimizer requires a complex command, make sure to use quotes `cargo run leaderboard 'complex command --with --args`.
 
-### Advanced protocol
+### Advanced Protocol
 
-To be a better behaved optimizer, we encourage you to implement the advanced protocol features.
+Input 
+- `{ a JSON graph }\n` starts your optimizer.
+Output
+- `{ an optimized JSON graph }\n` records a result, can be used multiple times.
+- `DONE\n` says that you are done with optimizing. Now you can receive a new input graph.
 
-If you are processing a graph, and you suddenly receive a new graph:
-- Finish the current graph and print it out. Then start the new graph.
-- To implement this, run the optimizer and the `stdin.read_line()` loop on a separate threads. `read_line` is a blocking API in most languages.
+Good optimizers will try to print out a JSON graph every ~30 seconds.
+This will be recorded and used for the visualisation. That makes comparing long running optimizers easier.
 
-If you are processing a graph, and you receive a stream closing
-- Finish the current graph and print it out.
+Optimizers can print debug information to `stderr`. This will show up in the console.
 
 ## Resources
 

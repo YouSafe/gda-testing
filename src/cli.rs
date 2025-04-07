@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-
-use clap::ValueHint::{self, ExecutablePath};
+use clap::ValueHint::{self};
 use clap::{Args, Parser, Subcommand, arg};
 
 #[derive(Debug, Parser)]
@@ -43,9 +41,9 @@ pub struct CompareArgs {
     #[clap(long, short)]
     pub seed: Option<u64>,
 
-    #[arg(value_hint=ExecutablePath)]
-    pub optimizer1: PathBuf,
+    #[arg(value_hint=ValueHint::CommandString)]
+    pub optimizer1: String,
 
-    #[arg(value_hint=ExecutablePath)]
-    pub optimizer2: PathBuf,
+    #[arg(value_hint=ValueHint::CommandString)]
+    pub optimizer2: String,
 }

@@ -1,50 +1,20 @@
-use std::{
-    path::{Path, PathBuf},
-    process::Stdio,
+use std::path::{Path, PathBuf};
+
+use smol::{fs, future, io};
+
+use crate::{
+    graph::Graph,
+    optimizer_protocol::{AllOk, Optimizer, OptimizerResponse},
 };
 
-use clap::builder::styling::Style;
-use smol::{
-    fs, future,
-    io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader},
-    process::Command,
-    stream::StreamExt,
-};
-
-use crate::graph::Graph;
-
-pub fn leaderboard_mode(
-    optimizer: &[String],
-    is_interrupted: impl Future<Output = ()>,
-) -> impl Future<Output = io::Result<()>> {
-    println!("Starting {} with args {:?}", &optimizer[0], &optimizer[1..]);
-    let mut optimizer = Command::new(&optimizer[0])
-        .args(optimizer[1..].iter().map(|v| std::ffi::OsStr::new(v)))
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped()) // Log child error m
-        .spawn()
-        .expect("failed to execute optimizer");
-
-    let mut child_stdin = optimizer.stdin.take().expect("failed to get child stdin");
-    let child_stdout = optimizer.stdout.take().expect("failed to get child stdout");
-    let child_stderr = optimizer.stderr.take().expect("failed to get child stdout");
-
-    let redirect_stderr = async {
-        let log_info_style = Style::new().dimmed();
-        let mut lines = BufReader::new(child_stderr).lines();
-        while let Some(line) = lines.next().await {
-            eprintln!("{log_info_style}[Optimizer] {}{log_info_style:#}", line?);
-        }
-        io::Result::Ok(())
-    };
+pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<()>> {
+    println!("Starting {:?}", command);
+    let mut optimizer = Optimizer::new(&command, "Optimizer".to_string());
+    let redirect_stderr = optimizer.redirect_stderr();
 
     let graphs = collect_graphs(Path::new("./graphs"))
         .expect("./graphs folder should exist and be full of graphs");
-    let read_graphs = async move {
-        let mut child_stdout = BufReader::new(child_stdout)
-            .lines()
-            .filter(|v| !matches!(v.as_deref(), Ok("")));
+    let run_optimizer = async move {
         for graph_path in graphs {
             println!("\nOptimizing {}", graph_path.display());
             let graph = fs::read(graph_path)
@@ -53,39 +23,23 @@ pub fn leaderboard_mode(
                 .map(|v| if v == b'\n' { b' ' } else { v })
                 .collect::<Vec<_>>();
 
-            child_stdin.write_all(&graph).await?;
-            child_stdin.write(b"\n").await?;
-            child_stdin.flush().await?;
+            optimizer.write_graph_bytes(&graph).await?;
 
-            let line = child_stdout
-                .next()
-                .await
-                .expect("Expected child stream to be open")
-                .expect("Expected child to return an optimized graph");
-
-            let graph: Graph = match serde_json::from_str(&line) {
-                Ok(v) => v,
-                Err(e) => {
-                    panic!("Failed to parse {:?} because of {}", line, e);
-                }
-            };
-
-            let num_edge_crossings = graph.crossings();
-            println!("Max edge crossing: {}", num_edge_crossings.max_per_edge);
+            loop {
+                let graph: Graph = match optimizer.read_response().await? {
+                    OptimizerResponse::Graph(graph) => graph,
+                    OptimizerResponse::Done => break,
+                };
+                let num_edge_crossings = graph.crossings();
+                println!("Max edge crossing: {}", num_edge_crossings.max_per_edge);
+            }
         }
 
         Ok(())
     };
 
     async {
-        let is_interrupted = async move {
-            _ = is_interrupted.await;
-            (io::Result::Ok(()), io::Result::Ok(()))
-        };
-        let (looper, redirecter) =
-            future::or(is_interrupted, future::zip(read_graphs, redirect_stderr)).await;
-        looper?;
-        redirecter?;
+        _ = future::zip(run_optimizer, redirect_stderr).await.all_ok()?;
         Ok(())
     }
 }
