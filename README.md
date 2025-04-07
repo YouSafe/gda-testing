@@ -43,3 +43,12 @@ If you are processing a graph, and you receive a stream closing
 ## Resources
 
 - https://github.com/jw1912/SPRT
+
+## Test Graphs
+
+- https://graphdrawingcontest.appspot.com/input.jsp
+  - `manual` has graphs that are covered by automatic
+  - `automaticcheck` has graphs that are covered by automatic
+  - `automaticcheck-3` had a duplicated ID, this was fixed
+  - `test-5` was a duplicate of `test-4`
+- `example-instances-2024` was provided by our tutor

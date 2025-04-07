@@ -1,0 +1,41 @@
+{
+  "nodes": [
+    {"id": 0, "x":  2, "y": 6},
+    {"id": 1, "x":  8, "y": 8},
+    {"id": 2, "x":  8, "y": 4},
+    {"id": 3, "x":  4, "y": 4},
+    {"id": 4, "x":  6, "y": 8},
+    {"id": 5, "x":  6, "y": 4},
+    {"id": 6, "x":  4, "y": 8},
+    {"id": 7, "x": 10, "y": 6}
+  ],
+  "edges": [
+    {"source": 6, "target": 3},
+    {"source": 6, "target": 5},
+    {"source": 3, "target": 4},
+    {"source": 3, "target": 1},
+    {"source": 4, "target": 2},
+    {"source": 2, "target": 1},
+    {"source": 6, "target": 0},
+    {"source": 7, "target": 2},
+    {"source": 5, "target": 1},
+    {"source": 6, "target": 2},
+    {"source": 0, "target": 3},
+    {"source": 4, "target": 5},
+    {"source": 7, "target": 1}
+  ],
+  "points": [
+    {"id": 0, "x": 10, "y":  4},
+    {"id": 1, "x":  4, "y": 10},
+    {"id": 2, "x":  8, "y": 10},
+    {"id": 3, "x":  4, "y":  2},
+    {"id": 4, "x":  2, "y":  8},
+    {"id": 5, "x":  6, "y":  7},
+    {"id": 6, "x":  8, "y":  2},
+    {"id": 7, "x":  2, "y":  4},
+    {"id": 8, "x": 10, "y":  8},
+    {"id": 9, "x":  6, "y":  5}
+  ],
+  "width": 12,
+  "height": 12
+}
