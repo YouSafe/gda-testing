@@ -10,6 +10,11 @@ pub mod leaderboard;
 pub mod optimizer_protocol;
 pub mod sprt;
 
+// For faster compile times, we could
+// - Use the Clap builder API
+// - Use a different library, see https://github.com/rosetta-rs/argparse-rosetta-rs
+// - Investigate a different Serde library, like nanoserde
+
 fn main() -> io::Result<()> {
     let is_interrupted = get_ctrl_c();
 
@@ -23,13 +28,17 @@ fn main() -> io::Result<()> {
             },
             compare_mode::compare_mode(compare_args),
         )),
-        cli::CliCommands::Leaderboard { name, optimizer } => smol::block_on(future::or(
+        cli::CliCommands::Leaderboard {
+            name,
+            optimizer,
+            filter,
+        } => smol::block_on(future::or(
             async move {
                 is_interrupted.await;
                 io::Result::Ok(())
             },
             async {
-                let run = leaderboard_mode(optimizer).await?;
+                let run = leaderboard_mode(optimizer, filter).await?;
                 write_run(name, run)?;
                 Ok(())
             },

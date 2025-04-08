@@ -9,13 +9,18 @@ use std::{
     time::Instant,
 };
 
-pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<SingleRun>> {
+pub fn leaderboard_mode(
+    command: String,
+    filter: Option<String>,
+) -> impl Future<Output = io::Result<SingleRun>> {
     println!("Starting {:?}", command);
     let mut optimizer = Optimizer::new(&command, "Optimizer".to_string());
     let redirect_stderr = optimizer.redirect_stderr();
 
     let graphs = collect_graphs(Path::new("./graphs"))
+        .map(|g| filter_graphs(g, filter))
         .expect("./graphs folder should exist and be full of graphs");
+
     let run_optimizer = async move {
         let mut run = SingleRun::new();
 
@@ -52,6 +57,17 @@ pub fn leaderboard_mode(command: String) -> impl Future<Output = io::Result<Sing
         let (run, b) = future::zip(run_optimizer, redirect_stderr).await;
         let (run, _) = (run?, b?);
         Ok(run)
+    }
+}
+
+fn filter_graphs(graphs: Vec<(PathBuf, String)>, filter: Option<String>) -> Vec<(PathBuf, String)> {
+    if let Some(filter) = filter {
+        graphs
+            .into_iter()
+            .filter(|(_, name)| name.contains(&filter))
+            .collect()
+    } else {
+        graphs
     }
 }
 

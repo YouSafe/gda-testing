@@ -17,7 +17,9 @@ pub enum CliCommands {
         name: String,
         #[arg(value_hint=ValueHint::CommandString)]
         optimizer: String,
-        // TODO: A --filter and -f would be so useful
+        /// Filter the input graphs
+        #[arg(short, long)]
+        filter: Option<String>,
     },
 }
 
