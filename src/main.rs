@@ -1,6 +1,6 @@
 use clap::Parser;
 use cli::Cli;
-use leaderboard::{run_statistics::write_run, subcommand::leaderboard_mode};
+use leaderboard::{plots::plot_runs, run_statistics::write_run, subcommand::leaderboard_mode};
 use smol::{channel, future, io};
 
 pub mod cli;
@@ -17,7 +17,6 @@ pub mod sprt;
 
 fn main() -> io::Result<()> {
     let is_interrupted = get_ctrl_c();
-
     let cli = Cli::parse();
 
     match cli.command {
@@ -39,7 +38,8 @@ fn main() -> io::Result<()> {
             },
             async {
                 let run = leaderboard_mode(optimizer, filter).await?;
-                write_run(name, run)?;
+                let run_statistics = write_run(name, run)?;
+                plot_runs(run_statistics);
                 Ok(())
             },
         )),

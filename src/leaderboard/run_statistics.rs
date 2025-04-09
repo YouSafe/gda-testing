@@ -1,5 +1,10 @@
 use serde::{Deserialize, Serialize};
-use std::{fs::OpenOptions, io::Read, path::PathBuf, time::Duration};
+use std::{
+    fs::OpenOptions,
+    io::{Read, Seek},
+    path::PathBuf,
+    time::Duration,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct RunStatistics {
@@ -51,7 +56,7 @@ fn get_sys_time_in_secs() -> u64 {
 }
 
 // let mut statistics = read_statistics(name.clone()).expect("statistics file should be readable");
-pub fn write_run(name: String, run: SingleRun) -> std::io::Result<()> {
+pub fn write_run(name: String, run: SingleRun) -> std::io::Result<RunStatistics> {
     let mut path = PathBuf::from("./leaderboard");
     path.push(name.clone());
     path.set_extension("json");
@@ -70,7 +75,12 @@ pub fn write_run(name: String, run: SingleRun) -> std::io::Result<()> {
     } else {
         serde_json::from_str(&file_contents).expect("statics file must be valid RunStatistics JSON")
     };
-    run_statistics.runs.push(run);
-    serde_json::to_writer(file, &run_statistics)?;
-    Ok(())
+    if run.graphs.len() > 0 {
+        run_statistics.runs.push(run);
+    }
+    file.set_len(0)?;
+    file.rewind()?;
+    // Use pretty writing for easier git diffs
+    serde_json::to_writer_pretty(file, &run_statistics)?;
+    Ok(run_statistics)
 }

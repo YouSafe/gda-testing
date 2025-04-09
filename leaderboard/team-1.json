@@ -1,1 +1,22 @@
-{"name":"team-1","runs":[{"unix_seconds":1744101682,"graphs":[{"graph":"/graphdrawingcontest/automatic/automatic-7.json","crossings":[{"max_per_edge":1,"duration":{"secs":29,"nanos":318534700}}]}]}]}
+{
+  "name": "team-1",
+  "runs": [
+    {
+      "unix_seconds": 1744101682,
+      "graphs": [
+        {
+          "graph": "/graphdrawingcontest/automatic/automatic-7.json",
+          "crossings": [
+            {
+              "max_per_edge": 1,
+              "duration": {
+                "secs": 29,
+                "nanos": 318534700
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

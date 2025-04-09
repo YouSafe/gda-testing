@@ -20,7 +20,11 @@ pub struct Optimizer {
 
 impl Optimizer {
     pub fn new(command: &str, name: String) -> Self {
+        #[cfg(target_os = "windows")] // For Windows with its backslashes
+        let command = winsplit::split(&command);
+        #[cfg(not(target_os = "windows"))] // For sane OSes
         let command = &shlex::split(&command).unwrap();
+
         let mut process = Command::new(&command[0])
             .args(command[1..].iter().map(|v| std::ffi::OsStr::new(v)))
             .stdin(Stdio::piped())
