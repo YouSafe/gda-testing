@@ -423,6 +423,7 @@ dependencies = [
  "charming",
  "clap",
  "ctrlc",
+ "numeric-sort",
  "petgraph",
  "petgraph-gen",
  "rand",
@@ -543,6 +544,12 @@ dependencies = [
  "cfg_aliases",
  "libc",
 ]
+
+[[package]]
+name = "numeric-sort"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f218700a47ff14f06bb676b97e63a6fb2fd25db3bf05d6f369971188e303f7f"
 
 [[package]]
 name = "once_cell"

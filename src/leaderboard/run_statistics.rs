@@ -48,6 +48,16 @@ impl SingleRun {
     }
 }
 
+impl GraphStatistics {
+    pub fn max_per_edge(&self) -> u32 {
+        self.crossings
+            .iter()
+            .map(|v| v.max_per_edge)
+            .max()
+            .expect("Graph crossing statistic must have entries")
+    }
+}
+
 fn get_sys_time_in_secs() -> u64 {
     match std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH) {
         Ok(n) => n.as_secs(),

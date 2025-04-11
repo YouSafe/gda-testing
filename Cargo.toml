@@ -8,6 +8,7 @@ anyhow = "1.0.97"
 charming = "0.4.0"
 clap = { version = "4.5.34", features = ["derive"] }
 ctrlc = "3.4.5"
+numeric-sort = "0.1.4"
 petgraph = "0.7.1"
 petgraph-gen = "0.2.0"
 rand = { version = "0.8.5", features = ["small_rng"] }

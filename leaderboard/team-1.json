@@ -15,6 +15,30 @@
               }
             }
           ]
+        },
+        {
+          "graph": "/graphdrawingcontest/automatic/automatic-11.json",
+          "crossings": [
+            {
+              "max_per_edge": 2,
+              "duration": {
+                "secs": 29,
+                "nanos": 318534700
+              }
+            }
+          ]
+        },
+        {
+          "graph": "/graphdrawingcontest/automatic/automatic-70.json",
+          "crossings": [
+            {
+              "max_per_edge": 1,
+              "duration": {
+                "secs": 29,
+                "nanos": 318534700
+              }
+            }
+          ]
         }
       ]
     }

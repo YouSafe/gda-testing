@@ -1,6 +1,6 @@
 use crate::{
     graph::Graph,
-    leaderboard::run_statistics::{CrossingStatistic, SingleRun},
+    leaderboard::run_statistics::{CrossingStatistic, GraphStatistics, SingleRun},
     optimizer_protocol::{Optimizer, OptimizerResponse},
 };
 use smol::{fs, future, io};
@@ -30,7 +30,10 @@ pub fn leaderboard_mode(
             let mut run = SingleRun::new();
 
             for (graph_path, graph_name) in graphs {
-                let graph_statistics = run.new_graph(graph_name);
+                let mut graph_statistics = GraphStatistics {
+                    graph: graph_name.clone(),
+                    crossings: vec![],
+                };
                 let start_time = Instant::now();
                 println!("\nOptimizing {}", graph_path.display());
                 let graph = fs::read(graph_path)
@@ -52,6 +55,12 @@ pub fn leaderboard_mode(
                         max_per_edge: num_edge_crossings.max_per_edge,
                         duration: start_time.elapsed(),
                     });
+                }
+
+                if graph_statistics.crossings.len() > 0 {
+                    run.graphs.push(graph_statistics);
+                } else {
+                    println!("No valid solution returned for {}", graph_name);
                 }
             }
 
