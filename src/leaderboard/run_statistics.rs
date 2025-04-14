@@ -1,9 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    fs::OpenOptions,
-    io::{Read, Seek},
+    fs::{File, OpenOptions},
+    io::{BufReader, BufWriter, Read, Seek, Write},
     path::PathBuf,
-    time::Duration,
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -28,7 +27,7 @@ pub struct GraphStatistics {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CrossingStatistic {
     pub max_per_edge: u32,
-    pub duration: Duration,
+    pub duration_ms: u32,
 }
 
 impl SingleRun {
@@ -90,7 +89,25 @@ pub fn write_run(name: String, run: SingleRun) -> std::io::Result<RunStatistics>
     }
     file.set_len(0)?;
     file.rewind()?;
+    let mut writer = BufWriter::new(file);
     // Use pretty writing for easier git diffs
-    serde_json::to_writer_pretty(file, &run_statistics)?;
+    serde_json::to_writer_pretty(&mut writer, &run_statistics)?;
+    writer.flush()?;
     Ok(run_statistics)
+}
+
+pub fn read_all_runs() -> std::io::Result<Vec<RunStatistics>> {
+    let mut all_runs = vec![];
+    for entry in std::fs::read_dir("./leaderboard")? {
+        let entry = entry?;
+        let reader = BufReader::new(File::open(entry.path())?);
+        // Read the JSON contents of the file
+        all_runs.push(match serde_json::from_reader(reader) {
+            Ok(v) => v,
+            Err(e) => {
+                panic!("Parsing {:?} failed {}", entry, e);
+            }
+        });
+    }
+    Ok(all_runs)
 }

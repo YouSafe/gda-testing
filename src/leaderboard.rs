@@ -1,3 +1,3 @@
 pub mod plots;
 pub mod run_statistics;
-pub mod subcommand;
+pub mod runner;

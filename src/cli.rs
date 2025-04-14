@@ -21,6 +21,8 @@ pub enum CliCommands {
         #[arg(short, long)]
         filter: Option<String>,
     },
+    /// Only display the plots
+    Plots {},
 }
 
 #[derive(Debug, Args)]

@@ -2,41 +2,46 @@
   "name": "team-1",
   "runs": [
     {
-      "unix_seconds": 1744101682,
+      "unix_seconds": 1744622856,
       "graphs": [
         {
-          "graph": "/graphdrawingcontest/automatic/automatic-7.json",
+          "graph": "/example-instances-2024/150-nodes.json",
           "crossings": [
             {
-              "max_per_edge": 1,
-              "duration": {
-                "secs": 29,
-                "nanos": 318534700
-              }
+              "max_per_edge": 49,
+              "duration_ms": 25636
             }
           ]
         },
         {
-          "graph": "/graphdrawingcontest/automatic/automatic-11.json",
+          "graph": "/example-instances-2024/sol-150-nodes-50-planar.json",
           "crossings": [
             {
-              "max_per_edge": 2,
-              "duration": {
-                "secs": 29,
-                "nanos": 318534700
-              }
+              "max_per_edge": 49,
+              "duration_ms": 14514
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "unix_seconds": 1744629857,
+      "graphs": [
+        {
+          "graph": "/example-instances-2024/150-nodes.json",
+          "crossings": [
+            {
+              "max_per_edge": 49,
+              "duration_ms": 44886
             }
           ]
         },
         {
-          "graph": "/graphdrawingcontest/automatic/automatic-70.json",
+          "graph": "/example-instances-2024/sol-150-nodes-50-planar.json",
           "crossings": [
             {
-              "max_per_edge": 1,
-              "duration": {
-                "secs": 29,
-                "nanos": 318534700
-              }
+              "max_per_edge": 49,
+              "duration_ms": 13815
             }
           ]
         }

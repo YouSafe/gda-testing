@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>GDA Plots</title>
+    <link
+      href="data:image/x-icon;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQEAYAAABPYyMiAAAABmJLR0T///////8JWPfcAAAACXBIWXMAAABIAAAASABGyWs+AAAAF0lEQVRIx2NgGAWjYBSMglEwCkbBSAcACBAAAeaR9cIAAAAASUVORK5CYII="
+      rel="icon"
+      type="image/x-icon"
+    />
+    <script src="node_modules/echarts/dist/echarts.min.js"></script>
+    <script src="node_modules/echarts-gl/dist/echarts-gl.min.js"></script>
+    <style>
+      .container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .item {
+        margin: auto;
+      }
+    </style>
+    <script type="module" src="./src/index.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="item" id="chart" style="width: 1000px; height: 800px"></div>
+    </div>
+  </body>
+</html>

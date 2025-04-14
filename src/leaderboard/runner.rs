@@ -44,21 +44,26 @@ pub fn leaderboard_mode(
 
                 optimizer.write_graph_bytes(&graph).await?;
 
+                let mut last_graph = None;
                 loop {
                     let graph: Graph = match optimizer.read_response().await? {
                         OptimizerResponse::Graph(graph) => graph,
                         OptimizerResponse::Done => break,
                     };
                     let num_edge_crossings = graph.crossings();
+                    last_graph = Some(graph);
                     println!("Max edge crossing: {}", num_edge_crossings.max_per_edge);
                     graph_statistics.crossings.push(CrossingStatistic {
                         max_per_edge: num_edge_crossings.max_per_edge,
-                        duration: start_time.elapsed(),
+                        duration_ms: start_time.elapsed().as_millis() as u32,
                     });
                 }
 
                 if graph_statistics.crossings.len() > 0 {
-                    run.graphs.push(graph_statistics);
+                    match last_graph.unwrap().is_valid() {
+                        Ok(_) => run.graphs.push(graph_statistics),
+                        Err(err) => println!("Graph {} was invalid! {}", graph_name, err),
+                    };
                 } else {
                     println!("No valid solution returned for {}", graph_name);
                 }

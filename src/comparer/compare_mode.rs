@@ -7,9 +7,9 @@ use smol::{future, io};
 
 use crate::{
     cli::CompareArgs,
+    comparer::sprt::{self, SPRT, elo_wld},
     graph::{Edge, Graph, Node},
     optimizer_protocol::{AllOk, Optimizer, OptimizerResponse},
-    sprt::{self, SPRT, elo_wld},
 };
 
 pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {

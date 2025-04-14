@@ -1,14 +1,18 @@
 use clap::Parser;
 use cli::Cli;
-use leaderboard::{plots::plot_runs, run_statistics::write_run, subcommand::leaderboard_mode};
+use comparer::compare_mode;
+use leaderboard::{
+    plots::plot_runs,
+    run_statistics::{read_all_runs, write_run},
+    runner::leaderboard_mode,
+};
 use smol::{channel, future, io};
 
 pub mod cli;
-pub mod compare_mode;
+pub mod comparer;
 pub mod graph;
 pub mod leaderboard;
 pub mod optimizer_protocol;
-pub mod sprt;
 
 // For faster compile times, we could
 // - Use the Clap builder API
@@ -38,11 +42,15 @@ fn main() -> io::Result<()> {
             },
             async {
                 let run = leaderboard_mode(optimizer, filter).await?;
-                let run_statistics = write_run(name, run)?;
-                plot_runs(run_statistics);
+                write_run(name, run)?;
+                plot_runs(read_all_runs()?)?;
                 Ok(())
             },
         )),
+        cli::CliCommands::Plots {} => {
+            plot_runs(read_all_runs()?)?;
+            Ok(())
+        }
     }
 }
 
