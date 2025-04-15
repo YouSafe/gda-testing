@@ -1,16 +1,17 @@
 use clap::Parser;
 use cli::Cli;
 use comparer::compare_mode;
+use graphs_runner::graphs_mode;
 use leaderboard::{
-    plots::plot_runs,
-    run_statistics::{read_all_runs, write_run},
-    runner::leaderboard_mode,
+    plots::plot_leaderboard,
+    stats::{TeamStats, read_all_runs, write_runs},
 };
 use smol::{channel, future, io};
 
 pub mod cli;
 pub mod comparer;
 pub mod graph;
+pub mod graphs_runner;
 pub mod leaderboard;
 pub mod optimizer_protocol;
 
@@ -31,24 +32,23 @@ fn main() -> io::Result<()> {
             },
             compare_mode::compare_mode(compare_args),
         )),
-        cli::CliCommands::Leaderboard {
-            name,
-            optimizer,
-            filter,
-        } => smol::block_on(future::or(
+        cli::CliCommands::Graphs { optimizer, filter } => smol::block_on(future::or(
             async move {
                 is_interrupted.await;
                 io::Result::Ok(())
             },
             async {
-                let run = leaderboard_mode(optimizer, filter).await?;
-                write_run(name, run)?;
-                plot_runs(read_all_runs()?)?;
+                let TeamStats { name, runs } = graphs_mode(optimizer, filter).await?;
+                write_runs(name, runs)?;
                 Ok(())
             },
         )),
-        cli::CliCommands::Plots {} => {
-            plot_runs(read_all_runs()?)?;
+        cli::CliCommands::Leaderboard {} => {
+            plot_leaderboard(read_all_runs()?)?;
+            Ok(())
+        }
+        cli::CliCommands::Adversary {} => {
+            println!("Not yet implemented");
             Ok(())
         }
     }

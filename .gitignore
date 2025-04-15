@@ -1,4 +1,2 @@
 /target
-/node_modules
-/leaderboard/leaderboard.html
-leaderboard.json
+leaderboard.html

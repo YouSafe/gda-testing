@@ -11,18 +11,18 @@ pub struct Cli {
 pub enum CliCommands {
     /// Compares two optimizers.
     Compare(CompareArgs),
-    /// Shows where your optimizer ranks in the leaderboard.
-    Leaderboard {
-        /// Name for leaderboard
-        name: String,
+    /// Runs your solver with a set of graphs
+    Graphs {
         #[arg(value_hint=ValueHint::CommandString)]
         optimizer: String,
         /// Filter the input graphs
         #[arg(short, long)]
         filter: Option<String>,
     },
-    /// Only display the plots
-    Plots {},
+    /// Generates a plot for the leaderboard
+    Leaderboard {},
+    /// Generate evil graphs (WIP)
+    Adversary {},
 }
 
 #[derive(Debug, Args)]

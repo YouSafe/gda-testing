@@ -1,6 +1,5 @@
 use crate::{
-    graph::Graph,
-    leaderboard::run_statistics::{CrossingStatistic, GraphStatistics, SingleRun},
+    leaderboard::stats::{SingleRun, TeamStats},
     optimizer_protocol::{Optimizer, OptimizerResponse},
 };
 use smol::{fs, future, io};
@@ -9,32 +8,28 @@ use std::{
     time::Instant,
 };
 
-pub fn leaderboard_mode(
+pub fn graphs_mode(
     command: String,
     filter: Option<String>,
-) -> impl Future<Output = io::Result<SingleRun>> {
+) -> impl Future<Output = io::Result<TeamStats>> {
     println!("Starting {:?}", command);
     let graphs = collect_graphs(Path::new("./graphs"))
         .map(|g| filter_graphs(g, filter))
         .expect("./graphs folder should exist and be full of graphs");
+    if graphs.is_empty() {
+        panic!("No graphs found in the ./graphs folder");
+    }
 
     async move {
-        if graphs.is_empty() {
-            return Ok(SingleRun::new());
-        }
-
-        let mut optimizer = Optimizer::new(&command, "Optimizer".to_string());
+        let mut optimizer = Optimizer::new(&command, 1);
         let redirect_stderr = optimizer.redirect_stderr();
 
+        let team_name = optimizer.read_start().await?;
+
         let run_optimizer = async move {
-            let mut run = SingleRun::new();
+            let mut runs = vec![];
 
             for (graph_path, graph_name) in graphs {
-                let mut graph_statistics = GraphStatistics {
-                    graph: graph_name.clone(),
-                    crossings: vec![],
-                };
-                let start_time = Instant::now();
                 println!("\nOptimizing {}", graph_path.display());
                 let graph = fs::read(graph_path)
                     .await?
@@ -42,39 +37,53 @@ pub fn leaderboard_mode(
                     .map(|v| if v == b'\n' { b' ' } else { v })
                     .collect::<Vec<_>>();
 
+                let start_time = Instant::now();
                 optimizer.write_graph_bytes(&graph).await?;
 
-                let mut last_graph = None;
+                let mut graphs = vec![];
+                let mut results = vec![];
                 loop {
-                    let graph: Graph = match optimizer.read_response().await? {
-                        OptimizerResponse::Graph(graph) => graph,
+                    match optimizer.read_response().await? {
+                        OptimizerResponse::Graph { text, graph } => {
+                            let max_per_edge = graph.crossings().max_per_edge;
+                            println!(
+                                "Optimizer {text} produced a graph with {max_per_edge} crossings"
+                            );
+                            results.push(SingleRun {
+                                optimizer: text,
+                                graph: graph_name.clone(),
+                                max_per_edge,
+                                duration_ms: start_time.elapsed().as_millis() as u32,
+                            });
+                            graphs.push(graph);
+                        }
                         OptimizerResponse::Done => break,
-                    };
-                    let num_edge_crossings = graph.crossings();
-                    last_graph = Some(graph);
-                    println!("Max edge crossing: {}", num_edge_crossings.max_per_edge);
-                    graph_statistics.crossings.push(CrossingStatistic {
-                        max_per_edge: num_edge_crossings.max_per_edge,
-                        duration_ms: start_time.elapsed().as_millis() as u32,
-                    });
+                        other => panic!("Should receive graph but instead got {:?}", other),
+                    }
+                }
+                if results.is_empty() {
+                    panic!("Optimizer should have returned at least one graph")
                 }
 
-                if graph_statistics.crossings.len() > 0 {
-                    match last_graph.unwrap().is_valid() {
-                        Ok(_) => run.graphs.push(graph_statistics),
-                        Err(err) => println!("Graph {} was invalid! {}", graph_name, err),
-                    };
-                } else {
-                    println!("No valid solution returned for {}", graph_name);
+                for (graph, result) in graphs.iter().zip(results.iter()) {
+                    match graph.is_valid() {
+                        Ok(_) => {}
+                        Err(e) => eprintln!("Graph {} was invalid! {}", result.graph, e),
+                    }
                 }
+
+                runs.append(&mut results);
             }
 
-            io::Result::Ok(run)
+            io::Result::Ok(runs)
         };
 
-        let (run, b) = future::zip(run_optimizer, redirect_stderr).await;
-        let (run, _) = (run?, b?);
-        Ok(run)
+        let (runs, b) = future::zip(run_optimizer, redirect_stderr).await;
+        let (runs, _) = (runs?, b?);
+        Ok(TeamStats {
+            name: team_name,
+            runs,
+        })
     }
 }
 

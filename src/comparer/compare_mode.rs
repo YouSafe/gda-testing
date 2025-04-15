@@ -9,7 +9,7 @@ use crate::{
     cli::CompareArgs,
     comparer::sprt::{self, SPRT, elo_wld},
     graph::{Edge, Graph, Node},
-    optimizer_protocol::{AllOk, Optimizer, OptimizerResponse},
+    optimizer_protocol::{AllOk, Optimizer},
 };
 
 pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {
@@ -27,14 +27,17 @@ pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {
 
     let mut rng = rand::rngs::SmallRng::seed_from_u64(seed);
 
-    let mut optimizer1 = Optimizer::new(&cli.optimizer1, cli.optimizer1.clone());
-    let mut optimizer2 = Optimizer::new(&cli.optimizer2, cli.optimizer2.clone());
+    let mut optimizer1 = Optimizer::new(&cli.optimizer1, 1);
+    let mut optimizer2 = Optimizer::new(&cli.optimizer2, 2);
 
     let redirect_stderr = future::zip(optimizer1.redirect_stderr(), optimizer2.redirect_stderr());
 
     println!("seed: {seed}");
 
     let run_optimizers = async move {
+        let (name1, name2) = future::zip(optimizer1.read_start(), optimizer2.read_start()).await;
+        let (name1, name2) = (name1?, name2?);
+
         let mut current_instance = 0;
         while current_instance < cli.max_games {
             let nodes = rng.gen_range(10..200);
@@ -71,7 +74,7 @@ pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {
 
             println!(
                 "Started instance {} of {} ({:?} vs {:?})",
-                current_instance, cli.max_games, cli.optimizer1, cli.optimizer2
+                current_instance, cli.max_games, name1, name2
             );
 
             _ = future::zip(
@@ -81,27 +84,24 @@ pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {
             .await
             .all_ok()?;
 
-            let (graph1, graph2) = future::zip(
-                read_final_response(&mut optimizer1),
-                read_final_response(&mut optimizer2),
-            )
-            .await
-            .all_ok()?;
+            let (graphs1, graphs2) =
+                future::zip(optimizer1.read_graphs(), optimizer2.read_graphs()).await;
+            let (graphs1, graphs2) = (graphs1?, graphs2?);
 
-            let crossings1 = graph1.crossings();
-            let crossings2 = graph2.crossings();
-            println!(
-                "{} max edge crossing: {}",
-                optimizer1.name(),
-                crossings1.max_per_edge
-            );
-            println!(
-                "{} max edge crossing: {}",
-                optimizer2.name(),
-                crossings1.max_per_edge
-            );
+            let crossings1 = graphs1
+                .iter()
+                .map(|(_, g)| g.crossings().max_per_edge)
+                .max()
+                .expect("Optimizer 1 returned no graphs");
+            let crossings2 = graphs2
+                .iter()
+                .map(|(_, g)| g.crossings().max_per_edge)
+                .max()
+                .expect("Optimizer 2 returned no graphs");
+            println!("{} max edge crossing: {}", name1, crossings1);
+            println!("{} max edge crossing: {}", name2, crossings2);
 
-            match crossings1.max_per_edge.cmp(&crossings2.max_per_edge) {
+            match crossings1.cmp(&crossings2) {
                 std::cmp::Ordering::Less => wins += 1,
                 std::cmp::Ordering::Equal => draws += 1,
                 std::cmp::Ordering::Greater => losses += 1,
@@ -137,21 +137,5 @@ pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {
         b?;
         c?;
         Ok(())
-    }
-}
-
-fn read_final_response(optimizer: &mut Optimizer) -> impl Future<Output = io::Result<Graph>> {
-    async {
-        let mut graph = match optimizer.read_response().await? {
-            OptimizerResponse::Graph(g) => g,
-            OptimizerResponse::Done => panic!("{} should have returned a graph", optimizer.name()),
-        };
-        loop {
-            match optimizer.read_response().await? {
-                OptimizerResponse::Graph(g) => graph = g,
-                OptimizerResponse::Done => break,
-            }
-        }
-        Ok(graph)
     }
 }
