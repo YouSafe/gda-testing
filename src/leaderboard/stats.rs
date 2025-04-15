@@ -21,9 +21,11 @@ pub struct SingleRun {
     pub max_per_edge: u32,
     /// How long this run took
     pub duration_ms: u32,
+    /// Unix timestamp in seconds of this set of runs
+    pub unix_timestamp: u64,
 }
 
-fn _get_sys_time_in_secs() -> u64 {
+pub fn get_sys_time_in_secs() -> u64 {
     match std::time::SystemTime::now().duration_since(std::time::SystemTime::UNIX_EPOCH) {
         Ok(n) => n.as_secs(),
         Err(_) => panic!("SystemTime before UNIX EPOCH!"),

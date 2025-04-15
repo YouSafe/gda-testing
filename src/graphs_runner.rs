@@ -1,5 +1,5 @@
 use crate::{
-    leaderboard::stats::{SingleRun, TeamStats},
+    leaderboard::stats::{SingleRun, TeamStats, get_sys_time_in_secs},
     optimizer_protocol::{Optimizer, OptimizerResponse},
 };
 use smol::{fs, future, io};
@@ -21,6 +21,7 @@ pub fn graphs_mode(
     }
 
     async move {
+        let unix_timestamp = get_sys_time_in_secs();
         let mut optimizer = Optimizer::new(&command, 1);
         let redirect_stderr = optimizer.redirect_stderr();
 
@@ -54,6 +55,7 @@ pub fn graphs_mode(
                                 graph: graph_name.clone(),
                                 max_per_edge,
                                 duration_ms: start_time.elapsed().as_millis() as u32,
+                                unix_timestamp,
                             });
                             graphs.push(graph);
                         }
