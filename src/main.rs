@@ -1,32 +1,69 @@
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
-
 use clap::Parser;
 use cli::Cli;
+use comparer::compare_mode;
+use graphs_runner::graphs_mode;
+use leaderboard::{
+    plots::plot_leaderboard,
+    stats::{TeamStats, read_all_runs, write_runs},
+};
+use smol::{channel, future, io};
 
 pub mod cli;
-pub mod compare_mode;
+pub mod comparer;
 pub mod graph;
-pub mod leaderboard_mode;
-pub mod sprt;
+pub mod graphs_runner;
+pub mod leaderboard;
+pub mod optimizer_protocol;
 
-fn main() -> anyhow::Result<()> {
-    let stop = Arc::new(AtomicBool::new(false));
-    ctrlc::set_handler({
-        let stop = stop.clone();
-        move || {
-            stop.store(true, Ordering::SeqCst);
-        }
-    })?;
+// For faster compile times, we could
+// - Use the Clap builder API
+// - Use a different library, see https://github.com/rosetta-rs/argparse-rosetta-rs
+// - Investigate a different Serde library, like nanoserde
 
+fn main() -> io::Result<()> {
+    let is_interrupted = get_ctrl_c();
     let cli = Cli::parse();
 
     match cli.command {
-        cli::CliCommands::Compare(compare_args) => compare_mode::compare_mode(compare_args, stop),
-        cli::CliCommands::Leaderboard { optimizer } => todo!(),
+        cli::CliCommands::Compare(compare_args) => smol::block_on(future::or(
+            async move {
+                is_interrupted.await;
+                io::Result::Ok(())
+            },
+            compare_mode::compare_mode(compare_args),
+        )),
+        cli::CliCommands::Graphs { optimizer, filter } => smol::block_on(future::or(
+            async move {
+                is_interrupted.await;
+                io::Result::Ok(())
+            },
+            async {
+                let TeamStats { name, runs } = graphs_mode(optimizer, filter).await?;
+                write_runs(name, runs)?;
+                Ok(())
+            },
+        )),
+        cli::CliCommands::Leaderboard {} => {
+            plot_leaderboard(read_all_runs()?)?;
+            Ok(())
+        }
+        cli::CliCommands::Adversary {} => {
+            println!("Not yet implemented");
+            Ok(())
+        }
     }
+}
 
-    Ok(())
+fn get_ctrl_c() -> impl Future<Output = ()> {
+    let (s, ctrl_c) = channel::bounded(10);
+    let handle = move || {
+        s.try_send(()).ok();
+    };
+    ctrlc::set_handler(handle).unwrap();
+
+    async move {
+        while !ctrl_c.recv().await.is_ok() {
+            // Wait
+        }
+    }
 }

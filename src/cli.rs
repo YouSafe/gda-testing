@@ -1,13 +1,8 @@
-use std::path::PathBuf;
-
-use clap::ValueHint::ExecutablePath;
+use clap::ValueHint::{self};
 use clap::{Args, Parser, Subcommand, arg};
 
 #[derive(Debug, Parser)]
 pub struct Cli {
-    #[clap(long, short)]
-    pub raw_mode: bool,
-
     #[command(subcommand)]
     pub command: CliCommands,
 }
@@ -16,11 +11,18 @@ pub struct Cli {
 pub enum CliCommands {
     /// Compares two optimizers.
     Compare(CompareArgs),
-    /// Shows where your optimizer ranks in the leaderboard.
-    Leaderboard {
-        #[arg(value_hint=ExecutablePath)]
-        optimizer: PathBuf,
+    /// Runs your solver with a set of graphs
+    Graphs {
+        #[arg(value_hint=ValueHint::CommandString)]
+        optimizer: String,
+        /// Filter the input graphs
+        #[arg(short, long)]
+        filter: Option<String>,
     },
+    /// Generates a plot for the leaderboard
+    Leaderboard {},
+    /// Generate evil graphs (WIP)
+    Adversary {},
 }
 
 #[derive(Debug, Args)]
@@ -46,9 +48,9 @@ pub struct CompareArgs {
     #[clap(long, short)]
     pub seed: Option<u64>,
 
-    #[arg(value_hint=ExecutablePath)]
-    pub optimizer1: PathBuf,
+    #[arg(value_hint=ValueHint::CommandString)]
+    pub optimizer1: String,
 
-    #[arg(value_hint=ExecutablePath)]
-    pub optimizer2: PathBuf,
+    #[arg(value_hint=ValueHint::CommandString)]
+    pub optimizer2: String,
 }

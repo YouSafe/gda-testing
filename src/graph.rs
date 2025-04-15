@@ -179,8 +179,13 @@ fn is_between((a, b): (u32, u32), (n, m): (u32, u32), (x, y): (u32, u32)) -> boo
 }
 
 fn ccw((a, b): (u32, u32), (n, m): (u32, u32), (x, y): (u32, u32)) -> std::cmp::Ordering {
-    // FIXME: this easily overflows
-    (y * n + b * x + m * a).cmp(&(m * x + y * a + b * n))
+    let a = a as i64;
+    let b = b as i64;
+    let n = n as i64;
+    let m = m as i64;
+    let x = x as i64;
+    let y = y as i64;
+    return ((n - a) * (y - m)).cmp(&((m - b) * (x - n)));
 }
 
 fn is_collinear(p1: (u32, u32), q: (u32, u32), p2: (u32, u32)) -> bool {
@@ -208,4 +213,18 @@ where
     T: Ord,
 {
     if v1 <= v2 { [v1, v2] } else { [v2, v1] }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::graph::ccw;
+    use std::cmp::Ordering;
+
+    #[test]
+    fn ccw_test() {
+        let a = (0, 0);
+        let b = (0, 1);
+        let c = (1, 1);
+        assert_eq!(ccw(a, b, c), Ordering::Less);
+    }
 }
