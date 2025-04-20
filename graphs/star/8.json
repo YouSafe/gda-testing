@@ -1,0 +1,1 @@
+{"nodes":[{"id":0,"x":1,"y":1},{"id":1,"x":1,"y":1},{"id":2,"x":1,"y":1},{"id":3,"x":1,"y":1},{"id":4,"x":1,"y":1},{"id":5,"x":1,"y":1},{"id":6,"x":1,"y":1},{"id":7,"x":1,"y":1}],"edges":[{"source":0,"target":1},{"source":0,"target":2},{"source":0,"target":3},{"source":0,"target":4},{"source":0,"target":5},{"source":0,"target":6},{"source":0,"target":7}],"width":8,"height":8}
