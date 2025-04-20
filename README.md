@@ -2,13 +2,24 @@
 
 Testing framework for testing different versions of optimizers.
 
-TODO: Put screenshot of the beautiful optimizer statistics here
+![Screenshot of the leaderboard](./leaderboard.png)
 
 ## Test Instances
 
 All the test instances are in the [./graphs](./graphs) folder.
 
 A description of them can be found in [GRAPHS.md](./GRAPHS.md)
+
+## Test Runner
+
+Then run `cargo run graphs 'path/to/your/optimizer'`
+
+If your optimizer requires a complex command, make sure to use quotes `cargo run graphs 'complex command --with --args`.
+
+This generates a `stats/optimizer-name.csv` file with some statistics.
+
+`cargo run leaderboard` takes those files and generates a leaderboard out of them!
+
 
 ## Protocol for optimizers
 
@@ -36,12 +47,6 @@ while(true) {
     }
 }
 ```
-
-Then run `cargo run graphs 'path/to/your/optimizer'`
-
-If your optimizer requires a complex command, make sure to use quotes `cargo run graphs 'complex command --with --args`.
-
-### Protocol Description
 
 Your optimizer first announces its name. e.g. `START team-1`
 
