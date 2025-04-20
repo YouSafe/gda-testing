@@ -8,6 +8,8 @@ TODO: Put screenshot of the beautiful optimizer statistics here
 
 All the test instances are in the [./graphs](./graphs) folder.
 
+A description of them can be found in [GRAPHS.md](./GRAPHS.md)
+
 ## Protocol for optimizers
 
 So you're writing an optimizer and want to use the automated testing infrastructure?
