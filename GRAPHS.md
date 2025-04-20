@@ -1,4 +1,7 @@
 # Test Graphs
+
+All the test instances are in the [./graphs](./graphs) folder.
+
 - `graphdrawingcontest` has all graphs from https://graphdrawingcontest.appspot.com/input.jsp
   - `automaticcheck-3` had a duplicated ID, this was fixed
   - The following have been excluded
