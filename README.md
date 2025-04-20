@@ -68,14 +68,14 @@ I recommend printing a lot of useful info there.
 - [Globe](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga286a9b4e6d5f2feedb286585176ca628)
 - [No edges](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga44c2631acd39f73c7117a8a8c60d6071)
 - Grid
-- [Toroidal Grid](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga5e5147b533c68c25f3372b3ec5c2f04b)
+- [Toroidal grid](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga5e5147b533c68c25f3372b3ec5c2f04b)
 - [Lattice](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga6c2abcc203dcfc0839f5233afeebbe5d)
 - Waxman graph: Random euclidean
 - Petersen
 - Tree 
 - Line: (Tree with child count = 1)
 - Wheel
-- Circulant Graph
+- Circulant
 - [Random](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga0feff1b510864aba8b73a1b34e5f2ca1)
 - [Random simple connected](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga781aeb9ae0e597beb8cfd97f2dc15201)
 - [Random simple](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gac6991a8ef695dc1ce1c320aeb843856d)
@@ -89,11 +89,13 @@ I recommend printing a lot of useful info there.
 - [Watts & Strogatz](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gaba4c92aaba97ed6ec8c4e250268f5c5a)
 
 - [Dorogovtsev-Mendes](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.dorogovtsev_mendes-Tuple{Integer})
-
-
-We also need
-connected clusters
-star graph 
+- [Power law distribution](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.static_scale_free-Tuple{Integer,%20Integer,%20Real})
+- Kronecker
+- [Random fitness](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.static_fitness_model-Union{Tuple{T},%20Tuple{Integer,%20Vector{T}}}%20where%20T%3C:Real)
+- [Stochastic block model](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.stochastic_block_model-Union{Tuple{T},%20Tuple{U},%20Tuple{T,%20T,%20Vector{U}}}%20where%20{U%3C:Integer,%20T%3C:Real})
+- [Clique](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.clique_graph-Union{Tuple{T},%20Tuple{T,%20T}}%20where%20T%3C:Integer)
+- Star
+- [Turán](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.turan_graph-Tuple{Integer,%20Integer})
 
 ### Test Graph Modifications
 
