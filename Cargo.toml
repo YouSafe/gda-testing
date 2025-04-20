@@ -1,16 +1,20 @@
 [package]
+edition = "2024"
 name = "gda_testing"
 version = "0.1.0"
-edition = "2024"
 
 [dependencies]
-clap = { version = "4.5.34", features=["derive"] }
-serde = { version = "1.0.219", features = ["derive"] }
-serde_json = "1.0.140"
-ctrlc = "3.4.5"
+anyhow = "1.0.98"
+charming = "0.4.0"
+clap = { version = "4.5.36", features = ["derive"] }
+csv = "1.3.1"
+ctrlc = "3.4.6"
+numeric-sort = "0.1.4"
 petgraph = "0.7.1"
 petgraph-gen = "0.2.0"
 rand = { version = "0.8.5", features = ["small_rng"] }
-anyhow = "1.0.97"
-smol = "2.0.2"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
 shlex = "1.3.0"
+smol = "2.0.2"
+winsplit = "0.1"

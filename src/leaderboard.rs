@@ -1,2 +1,2 @@
-pub mod run_statistics;
-pub mod subcommand;
+pub mod plots;
+pub mod stats;

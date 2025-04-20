@@ -10,7 +10,7 @@ use smol::{
 use crate::graph::Graph;
 
 pub struct Optimizer {
-    name: String,
+    id: u32,
     /// The child process.
     /// It is not terminated when the optimizer is dropped (see smol docs).
     process: Child,
@@ -19,8 +19,12 @@ pub struct Optimizer {
 }
 
 impl Optimizer {
-    pub fn new(command: &str, name: String) -> Self {
+    pub fn new(command: &str, id: u32) -> Self {
+        #[cfg(target_os = "windows")] // For Windows with its backslashes
+        let command = winsplit::split(&command);
+        #[cfg(not(target_os = "windows"))] // For sane OSes
         let command = &shlex::split(&command).unwrap();
+
         let mut process = Command::new(&command[0])
             .args(command[1..].iter().map(|v| std::ffi::OsStr::new(v)))
             .stdin(Stdio::piped())
@@ -33,7 +37,7 @@ impl Optimizer {
         let stdout = BufReader::new(process.stdout.take().expect("failed to get child stdout"));
 
         Self {
-            name,
+            id,
             process,
             stdin,
             stdout,
@@ -50,10 +54,13 @@ impl Optimizer {
             .expect("failed to get child stderr");
         let log_info_style = Style::new().dimmed();
         let mut lines = BufReader::new(child_stderr).lines();
-        let name = self.name.clone();
+        let id = self.id;
         async move {
             while let Some(line) = lines.next().await {
-                eprintln!("{log_info_style}[{}] {}{log_info_style:#}", name, line?);
+                eprintln!(
+                    "{log_info_style}[Optimizer {}] {}{log_info_style:#}",
+                    id, line?
+                );
             }
             io::Result::Ok(())
         }
@@ -89,29 +96,76 @@ impl Optimizer {
 
             let line = line.trim_end();
 
-            if line == "DONE" {
-                return Ok(OptimizerResponse::Done);
+            if let Some(rest) = starts_with(line, "START") {
+                Ok(OptimizerResponse::Start {
+                    name: rest.trim_ascii().to_string(),
+                })
+            } else if let Some(rest) = starts_with(line, "GRAPH") {
+                let text = rest.trim_ascii().to_string();
+                let mut line = String::new();
+                self.stdout.read_line(&mut line).await?;
+                let graph = match serde_json::from_str(&line) {
+                    Ok(v) => v,
+                    Err(e) => {
+                        panic!("Failed to parse {:?} because of {}", line, e);
+                    }
+                };
+                Ok(OptimizerResponse::Graph { text, graph })
+            } else if line == "DONE" {
+                Ok(OptimizerResponse::Done)
+            } else {
+                panic!("Unknown response {}", line)
             }
-
-            let graph = match serde_json::from_str(&line) {
-                Ok(v) => v,
-                Err(e) => {
-                    panic!("Failed to parse {:?} because of {}", line, e);
-                }
-            };
-
-            Ok(OptimizerResponse::Graph(graph))
         }
     }
 
-    pub fn name(&self) -> &str {
-        &self.name
+    #[must_use]
+    pub fn read_start(&mut self) -> impl Future<Output = io::Result<String>> {
+        async {
+            let response = self.read_response().await?;
+            if let OptimizerResponse::Start { name } = response {
+                Ok(name)
+            } else {
+                panic!("Expected ready, but got {:?}", response)
+            }
+        }
+    }
+
+    #[must_use]
+    pub fn read_graphs(&mut self) -> impl Future<Output = io::Result<Vec<(String, Graph)>>> {
+        async {
+            let mut results = vec![];
+            loop {
+                match self.read_response().await? {
+                    OptimizerResponse::Graph { text, graph } => results.push((text, graph)),
+                    OptimizerResponse::Done => break,
+                    other => panic!(
+                        "{} should have returned a graph but instead returned {:?}",
+                        self.id, other
+                    ),
+                }
+            }
+            if results.is_empty() {
+                panic!("{} should have returned at least one graph", self.id)
+            }
+            Ok(results)
+        }
+    }
+}
+
+/// Checks if text starts with a pattern, and returns the remaining text
+fn starts_with<'a>(text: &'a str, pattern: &str) -> Option<&'a str> {
+    if text.starts_with(pattern) {
+        Some(&text[pattern.len()..])
+    } else {
+        None
     }
 }
 
 #[derive(Debug)]
 pub enum OptimizerResponse {
-    Graph(Graph),
+    Start { name: String },
+    Graph { text: String, graph: Graph },
     Done,
 }
 
