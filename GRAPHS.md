@@ -30,7 +30,6 @@ All the test instances are in the [./graphs](./graphs) folder.
 - [Random planar](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gae9de58fd22ae2533f0d81d450d4bf985)
 - [Random planar tri-connected](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga38b77440e49db5110960a11be8195a30)
 - [Regular](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga5e2b0644b941d5f8bb7770a27a1f6171)
-- [Random series parallel](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gab7bf735577889df8926599b1152957f5)
 - [Erdős-Rényi](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga066156d279149423d377f108d42b19c1)
 - [Random tree](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gad83c1576fee773abf95334f842f6849b)
 - [Watts & Strogatz](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gaba4c92aaba97ed6ec8c4e250268f5c5a)
