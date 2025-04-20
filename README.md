@@ -76,7 +76,6 @@ I recommend printing a lot of useful info there.
 - Line: (Tree with child count = 1)
 - Wheel
 - Circulant
-- [Random](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga0feff1b510864aba8b73a1b34e5f2ca1)
 - [Random simple connected](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#ga781aeb9ae0e597beb8cfd97f2dc15201)
 - [Random simple](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gac6991a8ef695dc1ce1c320aeb843856d)
 - [Random hierarchical](https://ogdf.github.io/doc/ogdf/group__graph-generators.html#gaa4f8e06a35368a8ce24efcbb71bf1e36)
@@ -91,9 +90,8 @@ I recommend printing a lot of useful info there.
 - [Dorogovtsev-Mendes](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.dorogovtsev_mendes-Tuple{Integer})
 - [Power law distribution](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.static_scale_free-Tuple{Integer,%20Integer,%20Real})
 - Kronecker
-- [Random fitness](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.static_fitness_model-Union{Tuple{T},%20Tuple{Integer,%20Vector{T}}}%20where%20T%3C:Real)
 - [Stochastic block model](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.stochastic_block_model-Union{Tuple{T},%20Tuple{U},%20Tuple{T,%20T,%20Vector{U}}}%20where%20{U%3C:Integer,%20T%3C:Real})
-- [Clique](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.clique_graph-Union{Tuple{T},%20Tuple{T,%20T}}%20where%20T%3C:Integer)
+- [Cliques](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.clique_graph-Union{Tuple{T},%20Tuple{T,%20T}}%20where%20T%3C:Integer)
 - Star
 - [Turán](https://juliagraphs.org/Graphs.jl/stable/core_functions/simplegraphs_generators/#Graphs.SimpleGraphs.turan_graph-Tuple{Integer,%20Integer})
 
