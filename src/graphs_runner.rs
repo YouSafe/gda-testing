@@ -75,14 +75,25 @@ pub fn graphs_mode(
                         Err(e) => eprintln!("Graph {} was invalid! {}", result.graph, e),
                     }
 
+                    if input_graph.nodes.len() != graph.nodes.len() {
+                        eprintln!(
+                            "Output graph doesn't have the same number of nodes! Input has {} nodes. Output has {} nodes.",
+                            input_graph.nodes.len(),
+                            graph.nodes.len(),
+                        );
+                    }
+
+                    if input_graph.edges.len() != graph.edges.len() {
+                        eprintln!(
+                            "Output graph doesn't have the same number of edges! Input has {} edges. Output has {} edges",
+                            input_graph.edges.len(),
+                            graph.edges.len(),
+                        );
+                    }
+
                     if !input_graph.is_isomorphic(graph) {
                         eprintln!(
-                            "Graph {} did not match the input graph! Input has {} nodes and {} edges. Output has {} nodes and {} edges",
-                            result.graph,
-                            input_graph.nodes.len(),
-                            input_graph.edges.len(),
-                            graph.nodes.len(),
-                            graph.edges.len(),
+                            "Warning: Output graph did not trivially match the input graph. Did the nodes get relabeled, or did something worse happen?",
                         );
                     }
                 }
