@@ -17,7 +17,7 @@ pub struct Point {
     pub y: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Edge {
     pub source: usize,
     pub target: usize,
@@ -168,6 +168,24 @@ impl Graph {
         }
 
         Ok(())
+    }
+
+    pub fn is_isomorphic(&self, graph: &Graph) -> bool {
+        if self.nodes.len() != graph.nodes.len() {
+            return false;
+        }
+
+        if self.edges.len() != graph.edges.len() {
+            return false;
+        }
+
+        // Hmm, I bet there's a faster option
+        let mut input_edges = self.edges.clone();
+        let mut output_edges = graph.edges.clone();
+        input_edges.sort();
+        output_edges.sort();
+
+        return input_edges == output_edges;
     }
 }
 

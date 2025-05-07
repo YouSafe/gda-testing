@@ -1,4 +1,5 @@
 use crate::{
+    graph::Graph,
     leaderboard::stats::{SingleRun, TeamStats, get_sys_time_in_secs},
     optimizer_protocol::{Optimizer, OptimizerResponse},
 };
@@ -32,14 +33,15 @@ pub fn graphs_mode(
 
             for (graph_path, graph_name) in graphs {
                 println!("\nOptimizing {}", graph_path.display());
-                let graph = fs::read(graph_path)
+                let graph_bytes = fs::read(graph_path)
                     .await?
                     .into_iter()
                     .map(|v| if v == b'\n' { b' ' } else { v })
                     .collect::<Vec<_>>();
 
                 let start_time = Instant::now();
-                optimizer.write_graph_bytes(&graph).await?;
+                optimizer.write_graph_bytes(&graph_bytes).await?;
+                let input_graph: Graph = serde_json::from_slice(&graph_bytes)?;
 
                 let mut graphs = vec![];
                 let mut results = vec![];
@@ -71,6 +73,17 @@ pub fn graphs_mode(
                     match graph.is_valid() {
                         Ok(_) => {}
                         Err(e) => eprintln!("Graph {} was invalid! {}", result.graph, e),
+                    }
+
+                    if !input_graph.is_isomorphic(graph) {
+                        eprintln!(
+                            "Graph {} did not match the input graph! Input has {} nodes and {} edges. Output has {} nodes and {} edges",
+                            result.graph,
+                            input_graph.nodes.len(),
+                            input_graph.edges.len(),
+                            graph.nodes.len(),
+                            graph.edges.len(),
+                        );
                     }
                 }
 
