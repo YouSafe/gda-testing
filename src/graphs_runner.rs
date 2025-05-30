@@ -20,7 +20,7 @@ pub fn graphs_mode(
     if graphs.is_empty() {
         panic!("No graphs found in the ./graphs folder");
     }
-    let graphs_count = graphs.len() as f32;
+    let graphs_count = graphs.len();
 
     async move {
         let mut optimizer = Optimizer::new(&command, 1);
@@ -34,9 +34,8 @@ pub fn graphs_mode(
 
             for (graph_index, (graph_path, graph_name)) in graphs.into_iter().enumerate() {
                 println!(
-                    "\nOptimizing {} ({:04.1}%)",
+                    "\nOptimizing {} ({graph_index}/{graphs_count} graphs)",
                     graph_path.display(),
-                    (graph_index as f32 / graphs_count) * 100.
                 );
                 let graph_bytes = fs::read(graph_path)
                     .await?
