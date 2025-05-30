@@ -71,23 +71,24 @@ impl Graph {
             .collect::<Vec<_>>();
 
         let mut total_crossings = 0;
-        let mut max_crossings_per_edge = 0;
+        let mut crossings_per_edge = vec![0u32; self.edges.len()];
 
         for (i1, e1) in edges.iter().enumerate() {
             let mut crossings = 0;
-            for e2 in edges.iter().skip(i1 + 1) {
+            for (i2, e2) in edges.iter().enumerate().skip(i1 + 1) {
                 if is_crossing(e1.source, e1.target, e2.source, e2.target) {
+                    crossings_per_edge[i1] += 1;
+                    crossings_per_edge[i2] += 1;
                     crossings += 1;
                 }
             }
 
-            max_crossings_per_edge = max_crossings_per_edge.max(crossings);
             total_crossings += crossings;
         }
 
         CrossingCountingResult {
             total: total_crossings,
-            max_per_edge: max_crossings_per_edge,
+            max_per_edge: crossings_per_edge.into_iter().max().unwrap_or_default(),
         }
     }
 
