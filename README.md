@@ -27,7 +27,7 @@ So you're writing an optimizer and want to use the automated testing infrastruct
 
 Just add a main loop like this to your program
 ```rs
-println!("START Solver-Name-Goes-Here");
+println!("START Solver-Name-And-Version-Goes-Here");
 while(true) {
     // Read a single line from the input
     let json_graph = match stdin.read_line() {
@@ -43,17 +43,23 @@ while(true) {
       // Print the optimized graph back, and be ready for the next input
       println!("GRAPH Solver-Parameters-Go-Here");
       println!(json_graph_optimized);
-      println!("DONE");
     }
+    println!("DONE");
 }
 ```
 
-Your optimizer first announces its name. e.g. `START team-1`
+Your optimizer first announces its name. e.g. `START team-1-v0.0.1`
 
 Then, it repeatedly gets a JSON graph formatted on a single line as an input.
 Your optimizer can now run its algorithm(s) on the graph. And it outputs a graph for each of those.
 e.g. If you are running it with two spring based layouts, and then with a force based layout, you could output
-`GRAPH spring-25\n`, `{ ... }`, `GRAPH spring-75`, `{ ... }`, `GRAPH force-25`, `{ .... }`
+```
+GRAPH spring-25
+{ "edges": [...], "nodes": [...], "width": ..., "height": ... }
+GRAPH spring-75
+{ ... }
+GRAPH force-25
+```
 
 Finally, the optimizer announces that it's ready for the next graph by printing `DONE`.
 
