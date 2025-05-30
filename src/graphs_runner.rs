@@ -72,13 +72,17 @@ pub fn graphs_mode(
                     panic!("Optimizer should have returned at least one graph")
                 }
 
-                for (graph, result) in graphs.iter().zip(results.iter()) {
+                for (graph, result) in graphs.iter().zip(results.iter_mut()) {
                     match graph.is_valid() {
                         Ok(_) => {}
-                        Err(e) => eprintln!("Graph {} was invalid! {}", result.graph, e),
+                        Err(e) => {
+                            result.max_per_edge = u32::MAX;
+                            eprintln!("Graph {} was invalid! {}", result.graph, e);
+                        }
                     }
 
                     if input_graph.nodes.len() != graph.nodes.len() {
+                        result.max_per_edge = u32::MAX;
                         eprintln!(
                             "Output graph doesn't have the same number of nodes! Input has {} nodes. Output has {} nodes.",
                             input_graph.nodes.len(),
@@ -87,6 +91,7 @@ pub fn graphs_mode(
                     }
 
                     if input_graph.edges.len() != graph.edges.len() {
+                        result.max_per_edge = u32::MAX;
                         eprintln!(
                             "Output graph doesn't have the same number of edges! Input has {} edges. Output has {} edges",
                             input_graph.edges.len(),
