@@ -2,10 +2,7 @@ use clap::Parser;
 use cli::Cli;
 use comparer::compare_mode;
 use graphs_runner::graphs_mode;
-use leaderboard::{
-    plots::plot_leaderboard,
-    stats::{TeamStats, read_all_runs, write_runs},
-};
+use leaderboard::{plots::plot_leaderboard, stats::read_all_runs};
 use smol::{channel, future, io};
 
 pub mod cli;
@@ -38,8 +35,7 @@ fn main() -> io::Result<()> {
                 io::Result::Ok(())
             },
             async {
-                let TeamStats { name, runs } = graphs_mode(optimizer, filter).await?;
-                write_runs(name, runs)?;
+                _ = graphs_mode(optimizer, filter).await?;
                 Ok(())
             },
         )),

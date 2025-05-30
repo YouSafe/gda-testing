@@ -1,6 +1,6 @@
 use crate::{
     graph::Graph,
-    leaderboard::stats::{SingleRun, TeamStats, get_sys_time_in_secs},
+    leaderboard::stats::{ResultsWriter, SingleRun, TeamStats},
     optimizer_protocol::{Optimizer, OptimizerResponse},
 };
 use smol::{fs, future, io};
@@ -20,19 +20,24 @@ pub fn graphs_mode(
     if graphs.is_empty() {
         panic!("No graphs found in the ./graphs folder");
     }
+    let graphs_count = graphs.len() as f32;
 
     async move {
-        let unix_timestamp = get_sys_time_in_secs();
         let mut optimizer = Optimizer::new(&command, 1);
         let redirect_stderr = optimizer.redirect_stderr();
 
         let team_name = optimizer.read_start().await?;
+        let mut results_file = ResultsWriter::new(&team_name)?;
 
         let run_optimizer = async move {
             let mut runs = vec![];
 
-            for (graph_path, graph_name) in graphs {
-                println!("\nOptimizing {}", graph_path.display());
+            for (graph_index, (graph_path, graph_name)) in graphs.into_iter().enumerate() {
+                println!(
+                    "\nOptimizing {} ({:04.1}%)",
+                    graph_path.display(),
+                    (graph_index as f32 / graphs_count) * 100.
+                );
                 let graph_bytes = fs::read(graph_path)
                     .await?
                     .into_iter()
@@ -57,7 +62,6 @@ pub fn graphs_mode(
                                 graph: graph_name.clone(),
                                 max_per_edge,
                                 duration_ms: start_time.elapsed().as_millis() as u32,
-                                unix_timestamp,
                             });
                             graphs.push(graph);
                         }
@@ -96,10 +100,14 @@ pub fn graphs_mode(
                             "Warning: Output graph did not trivially match the input graph. Did the nodes get relabeled, or did something worse happen?",
                         );
                     }
+
+                    results_file.write_single_run(&result)?;
                 }
 
                 runs.append(&mut results);
             }
+
+            results_file.flush()?;
 
             io::Result::Ok(runs)
         };
