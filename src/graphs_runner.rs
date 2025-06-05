@@ -178,6 +178,6 @@ fn collect_graphs(dir: &Path) -> std::io::Result<Vec<(PathBuf, String)>> {
 
     let mut graphs = Vec::new();
     collect_graphs_rec(dir, "", &mut graphs)?;
-    graphs.sort();
+    graphs.sort(); // TODO: Use a number aware sorter here
     Ok(graphs)
 }
