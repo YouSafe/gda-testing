@@ -1,6 +1,6 @@
 use std::process::Stdio;
 
-use clap::builder::styling::Style;
+use clap::builder::styling::{self, Style};
 use smol::{
     io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, ChildStdout, Command},
@@ -17,6 +17,13 @@ pub struct Optimizer {
     stdin: ChildStdin,
     stdout: BufReader<ChildStdout>,
 }
+
+pub static LOG_INFO: Style = Style::new().dimmed();
+pub static LOG_WARN: Style = Style::new()
+    .dimmed()
+    .fg_color(Some(styling::Color::Ansi(styling::AnsiColor::Yellow)));
+pub static LOG_ERROR: Style =
+    Style::new().fg_color(Some(styling::Color::Ansi(styling::AnsiColor::Red)));
 
 impl Optimizer {
     pub fn new(command: &str, id: u32) -> Self {
@@ -52,15 +59,11 @@ impl Optimizer {
             .stderr
             .take()
             .expect("failed to get child stderr");
-        let log_info_style = Style::new().dimmed();
         let mut lines = BufReader::new(child_stderr).lines();
         let id = self.id;
         async move {
             while let Some(line) = lines.next().await {
-                eprintln!(
-                    "{log_info_style}[Optimizer {}] {}{log_info_style:#}",
-                    id, line?
-                );
+                eprintln!("{LOG_INFO}[Optimizer {}] {}{LOG_INFO:#}", id, line?);
             }
             io::Result::Ok(())
         }
@@ -87,34 +90,39 @@ impl Optimizer {
     /// Reads a response from the optimizer
     #[must_use]
     pub fn read_response(&mut self) -> impl Future<Output = io::Result<OptimizerResponse>> {
-        async {
-            let mut line = String::new();
-            // Skip empty lines
-            while line.trim_end().len() == 0 {
-                self.stdout.read_line(&mut line).await?;
-            }
-
-            let line = line.trim_end();
-
-            if let Some(rest) = starts_with(line, "START") {
-                Ok(OptimizerResponse::Start {
-                    name: rest.trim_ascii().to_string(),
-                })
-            } else if let Some(rest) = starts_with(line, "GRAPH") {
-                let text = rest.trim_ascii().to_string();
+        let id = self.id;
+        async move {
+            loop {
                 let mut line = String::new();
                 self.stdout.read_line(&mut line).await?;
-                let graph = match serde_json::from_str(&line) {
-                    Ok(v) => v,
-                    Err(e) => {
-                        panic!("Failed to parse {:?} because of {}", line, e);
+                if line.len() == 0 {
+                    if !matches!(self.process.try_status(), Ok(None)) {
+                        return Ok(OptimizerResponse::Done);
                     }
-                };
-                Ok(OptimizerResponse::Graph { text, graph })
-            } else if line == "DONE" {
-                Ok(OptimizerResponse::Done)
-            } else {
-                panic!("Unknown response {}", line)
+                    continue;
+                }
+
+                if let Some(rest) = starts_with(&line, "START") {
+                    return Ok(OptimizerResponse::Start {
+                        name: rest.trim_ascii().to_string(),
+                    });
+                } else if line.starts_with("GRAPH") {
+                    return Ok(OptimizerResponse::GraphRequest);
+                } else if line.starts_with("{") {
+                    let graph = match serde_json::from_str(&line) {
+                        Ok(v) => v,
+                        Err(e) => {
+                            panic!("Failed to parse {:?} because of {}", line, e);
+                        }
+                    };
+                    return Ok(OptimizerResponse::Graph { graph });
+                } else {
+                    // Optimizers shouldn't print to stdout, but whatever
+                    eprintln!(
+                        "{LOG_WARN}[Optimizer to stdout {}] {}{LOG_WARN:#}",
+                        id, line
+                    );
+                }
             }
         }
     }
@@ -122,33 +130,39 @@ impl Optimizer {
     #[must_use]
     pub fn read_start(&mut self) -> impl Future<Output = io::Result<String>> {
         async {
-            let response = self.read_response().await?;
-            if let OptimizerResponse::Start { name } = response {
-                Ok(name)
-            } else {
-                panic!("Expected ready, but got {:?}", response)
+            match self.read_response().await? {
+                OptimizerResponse::Start { name } => Ok(name),
+                response => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("expected start, but got {:?}", response),
+                )),
             }
         }
     }
 
     #[must_use]
-    pub fn read_graphs(&mut self) -> impl Future<Output = io::Result<Vec<(String, Graph)>>> {
+    pub fn read_graph(&mut self) -> impl Future<Output = io::Result<Graph>> {
         async {
-            let mut results = vec![];
-            loop {
-                match self.read_response().await? {
-                    OptimizerResponse::Graph { text, graph } => results.push((text, graph)),
-                    OptimizerResponse::Done => break,
-                    other => panic!(
-                        "{} should have returned a graph but instead returned {:?}",
-                        self.id, other
-                    ),
-                }
+            match self.read_response().await? {
+                OptimizerResponse::Graph { graph } => Ok(graph),
+                response => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("expected graph, but got {:?}", response),
+                )),
             }
-            if results.is_empty() {
-                panic!("{} should have returned at least one graph", self.id)
+        }
+    }
+
+    #[must_use]
+    pub fn read_graph_request(&mut self) -> impl Future<Output = io::Result<()>> {
+        async {
+            match self.read_response().await? {
+                OptimizerResponse::GraphRequest => Ok(()),
+                response => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("expected graph request, but got {:?}", response),
+                )),
             }
-            Ok(results)
         }
     }
 }
@@ -165,7 +179,8 @@ fn starts_with<'a>(text: &'a str, pattern: &str) -> Option<&'a str> {
 #[derive(Debug)]
 pub enum OptimizerResponse {
     Start { name: String },
-    Graph { text: String, graph: Graph },
+    GraphRequest,
+    Graph { graph: Graph },
     Done,
 }
 

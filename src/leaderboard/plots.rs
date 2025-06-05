@@ -1,4 +1,4 @@
-use super::stats::TeamStats;
+use super::stats::RunStats;
 use charming::{
     Chart, HtmlRenderer,
     component::{Axis, Feature, Legend, Toolbox, ToolboxDataZoom},
@@ -9,7 +9,7 @@ use charming::{
 use rand::{Rng, SeedableRng};
 use std::collections::HashMap;
 
-pub fn plot_leaderboard(all_teams: Vec<TeamStats>) -> std::io::Result<()> {
+pub fn plot_leaderboard(all_teams: Vec<RunStats>) -> std::io::Result<()> {
     let graph_names = get_graph_names(&all_teams);
     let graph_ids = make_graph_ids(&graph_names);
     let best_crossing_values: Vec<u32> = get_best_crossing_values(&all_teams, &graph_ids)
@@ -76,7 +76,7 @@ pub fn plot_leaderboard(all_teams: Vec<TeamStats>) -> std::io::Result<()> {
     Ok(())
 }
 
-fn get_graph_names(all_runs: &[TeamStats]) -> Vec<String> {
+fn get_graph_names(all_runs: &[RunStats]) -> Vec<String> {
     let mut graph_names = all_runs
         .iter()
         .flat_map(|runs| runs.runs.iter().map(|r| r.graph.clone()))
@@ -107,16 +107,18 @@ fn make_graph_ids(graph_names: &[String]) -> HashMap<String, usize> {
 }
 
 fn get_best_crossing_values<'a>(
-    all_runs: impl IntoIterator<Item = &'a TeamStats>,
+    all_runs: impl IntoIterator<Item = &'a RunStats>,
     graph_ids: &HashMap<String, usize>,
 ) -> Vec<Option<u32>> {
     let mut best_values: Vec<Option<u32>> = vec![None; graph_ids.len()];
-    for graph in all_runs.into_iter().flat_map(|r| &r.runs) {
-        let id = graph_ids[&graph.graph] as usize;
+    for (id, max_per_edge) in all_runs.into_iter().flat_map(|r| &r.runs).filter_map(|v| {
+        v.max_per_edge
+            .map(|max_per_edge| (graph_ids[&v.graph] as usize, max_per_edge))
+    }) {
         if let Some(v) = &mut best_values[id] {
-            *v = (*v).min(graph.max_per_edge);
+            *v = (*v).min(max_per_edge);
         } else {
-            best_values[id] = Some(graph.max_per_edge);
+            best_values[id] = Some(max_per_edge);
         }
     }
     best_values

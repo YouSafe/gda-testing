@@ -84,20 +84,12 @@ pub fn compare_mode(cli: CompareArgs) -> impl Future<Output = io::Result<()>> {
             .await
             .all_ok()?;
 
-            let (graphs1, graphs2) =
-                future::zip(optimizer1.read_graphs(), optimizer2.read_graphs()).await;
-            let (graphs1, graphs2) = (graphs1?, graphs2?);
+            let (graph1, graph2) =
+                future::zip(optimizer1.read_graph(), optimizer2.read_graph()).await;
+            let (graph1, graph2) = (graph1?, graph2?);
 
-            let crossings1 = graphs1
-                .iter()
-                .map(|(_, g)| g.crossings().max_per_edge)
-                .max()
-                .expect("Optimizer 1 returned no graphs");
-            let crossings2 = graphs2
-                .iter()
-                .map(|(_, g)| g.crossings().max_per_edge)
-                .max()
-                .expect("Optimizer 2 returned no graphs");
+            let crossings1 = graph1.crossings().max_per_edge;
+            let crossings2 = graph2.crossings().max_per_edge;
             println!("{} max edge crossing: {}", name1, crossings1);
             println!("{} max edge crossing: {}", name2, crossings2);
 

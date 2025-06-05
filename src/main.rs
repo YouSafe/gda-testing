@@ -1,7 +1,7 @@
 use clap::Parser;
 use cli::Cli;
 use comparer::compare_mode;
-use graphs_runner::graphs_mode;
+use graphs_runner::GraphsModeRunner;
 use leaderboard::{plots::plot_leaderboard, stats::read_all_runs};
 use smol::{channel, future, io};
 
@@ -35,7 +35,12 @@ fn main() -> io::Result<()> {
                 io::Result::Ok(())
             },
             async {
-                _ = graphs_mode(optimizer, filter).await?;
+                _ = GraphsModeRunner {
+                    command: optimizer,
+                    filter,
+                }
+                .run()
+                .await?;
                 Ok(())
             },
         )),
