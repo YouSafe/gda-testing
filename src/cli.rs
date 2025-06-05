@@ -18,6 +18,9 @@ pub enum CliCommands {
         /// Filter the input graphs
         #[arg(short, long)]
         filter: Option<String>,
+        /// Skip graphs before this one
+        #[arg(long)]
+        skip_to: Option<String>,
     },
     /// Generates a plot for the leaderboard
     Leaderboard {},

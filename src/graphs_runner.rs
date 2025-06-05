@@ -12,7 +12,7 @@ use std::{
 pub struct GraphsModeRunner {
     pub command: String,
     pub filter: Option<String>,
-    // skip_seen: bool
+    pub skip_to: Option<String>,
 }
 
 impl GraphsModeRunner {
@@ -34,13 +34,18 @@ impl GraphsModeRunner {
         async move {
             let mut optimizer = Optimizer::new(&self.command, 1);
             let redirect_stderr = optimizer.redirect_stderr();
+            let skip_to = self.skip_to.as_deref().unwrap_or_default();
 
             let run_optimizer = async move {
                 let team_name = optimizer.read_start().await?;
                 let mut results_file = ResultsWriter::new(&team_name)?;
                 let mut runs = vec![];
 
-                for (graph_index, (graph_path, graph_name)) in graphs.into_iter().enumerate() {
+                for (graph_index, (graph_path, graph_name)) in graphs
+                    .into_iter()
+                    .enumerate()
+                    .skip_while(|(_, (_, name))| !name.contains(&skip_to))
+                {
                     println!(
                         "\nOptimizing {} ({graph_index}/{graphs_count} graphs)",
                         graph_path.display(),

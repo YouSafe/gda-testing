@@ -1,0 +1,17 @@
+graph,max_per_edge,duration_ms
+"/SBM/40_18_[80, 48, 45, 132].json",5440,354281
+"/SBM/[1 2; 1 2]_[4, 4].json",1,25018
+"/SBM/[8 2 1; 6 2 1; 1 1 1]_[10, 18, 4].json",11,20732
+"/circulant_graph/100_[1,2,3].json",5,26178
+"/circulant_graph/100_[1,2].json",3,25168
+/circulant_graph/100_[1].json,1,25086
+"/circulant_graph/10_[1,2,3].json",2,25325
+"/circulant_graph/10_[1,2].json",1,25016
+/circulant_graph/10_[1].json,0,39
+"/circulant_graph/5000_[1,2,3].json",26,219203
+"/circulant_graph/5000_[1,2].json",14,213007
+/circulant_graph/5000_[1].json,8,204362
+"/circulant_graph/50_[1,2,3].json",2,25107
+"/circulant_graph/50_[1,2].json",0,56
+/circulant_graph/50_[1].json,1,25052
+/complete_bipartite_graph/100_10.json,,32194

@@ -29,7 +29,11 @@ fn main() -> io::Result<()> {
             },
             compare_mode::compare_mode(compare_args),
         )),
-        cli::CliCommands::Graphs { optimizer, filter } => smol::block_on(future::or(
+        cli::CliCommands::Graphs {
+            optimizer,
+            filter,
+            skip_to,
+        } => smol::block_on(future::or(
             async move {
                 is_interrupted.await;
                 io::Result::Ok(())
@@ -38,6 +42,7 @@ fn main() -> io::Result<()> {
                 _ = GraphsModeRunner {
                     command: optimizer,
                     filter,
+                    skip_to,
                 }
                 .run()
                 .await?;
