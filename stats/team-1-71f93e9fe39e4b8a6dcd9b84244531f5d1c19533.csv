@@ -15,3 +15,9 @@ graph,max_per_edge,duration_ms
 "/circulant_graph/50_[1,2].json",0,56
 /circulant_graph/50_[1].json,1,25052
 /complete_bipartite_graph/100_10.json,,32194
+/complete_bipartite_graph/100_50.json,2165,128699
+/complete_bipartite_graph/10_10.json,28,25032
+/complete_bipartite_graph/10_100.json,386,48002
+/complete_bipartite_graph/10_50.json,183,50012
+/complete_bipartite_graph/10_500.json,1962,235362
+/complete_bipartite_graph/500_10.json,1964,126954
