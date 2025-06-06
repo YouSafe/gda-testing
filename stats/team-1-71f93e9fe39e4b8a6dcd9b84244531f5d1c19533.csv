@@ -21,7 +21,6 @@ graph,max_per_edge,duration_ms
 /complete_bipartite_graph/10_50.json,183,50012
 /complete_bipartite_graph/10_500.json,1962,235362
 /complete_bipartite_graph/500_10.json,1964,126954
-/complete_bipartite_graph/500_50.json,,3954904
 /complete_bipartite_graph/50_10.json,182,39215
 /complete_bipartite_graph/50_100.json,2182,161609
 /complete_bipartite_graph/50_50.json,,80876
@@ -113,7 +112,6 @@ graph,max_per_edge,duration_ms
 /power_law/1000_10000_2.json,3883,202034
 /power_law/100_300_2.json,43,29414
 /power_law/10_10_2.json,0,39
-/random_erdos_renyi_graph/1000_0.1.json,22420,2757075
 /random_erdos_renyi_graph/100_0.1.json,77,49593
 /random_erdos_renyi_graph/100_0.5.json,,38279
 /random_erdos_renyi_graph/100_0.7.json,1541,94734
