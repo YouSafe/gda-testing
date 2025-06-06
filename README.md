@@ -2,6 +2,8 @@
 
 Testing framework for testing different versions of optimizers.
 
+![Download the latest release](https://github.com/YouSafe/gda-testing/releases).
+
 ![Screenshot of the leaderboard](./leaderboard.png)
 
 ## Test Instances
