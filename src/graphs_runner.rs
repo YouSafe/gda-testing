@@ -3,7 +3,11 @@ use crate::{
     leaderboard::stats::{GraphStats, ResultsWriter, RunStats},
     optimizer_protocol::{Optimizer, OptimizerResponse},
 };
-use smol::{fs, future, io};
+use smol::{
+    fs::{self, File, create_dir_all},
+    future,
+    io::{self, AsyncWriteExt, BufWriter},
+};
 use std::{
     path::{Path, PathBuf},
     time::Instant,
@@ -13,6 +17,7 @@ pub struct GraphsModeRunner {
     pub command: String,
     pub filter: Option<String>,
     pub skip_to: Option<String>,
+    pub save: bool,
 }
 
 impl GraphsModeRunner {
@@ -117,6 +122,22 @@ impl GraphsModeRunner {
                         eprintln!(
                             "Warning: Output graph did not trivially match the input graph. Did the nodes get relabeled, or did something worse happen?",
                         );
+                    }
+
+                    if self.save {
+                        let mut path = PathBuf::from("./saved");
+                        path.push(&team_name.trim_start_matches('/'));
+                        path.push(&graph_name.trim_start_matches('/'));
+                        path.set_extension("json");
+
+                        if let Some(parent) = path.parent() {
+                            create_dir_all(parent).await?;
+                        }
+
+                        let file = File::create(&path).await?;
+                        let mut writer = BufWriter::new(file);
+                        let json_data = serde_json::to_vec_pretty(&graph)?;
+                        writer.write_all(&json_data).await?;
                     }
 
                     results_file.write_single_run(&result)?;
