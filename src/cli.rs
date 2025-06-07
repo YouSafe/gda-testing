@@ -21,6 +21,8 @@ pub enum CliCommands {
         /// Skip graphs before this one
         #[arg(long)]
         skip_to: Option<String>,
+        #[arg(short, long, action = clap::ArgAction::SetTrue)]
+        save: bool,
     },
     /// Generates a plot for the leaderboard
     Leaderboard {},
