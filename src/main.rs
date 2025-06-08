@@ -33,6 +33,7 @@ fn main() -> io::Result<()> {
             optimizer,
             filter,
             skip_to,
+            save,
         } => smol::block_on(future::or(
             async move {
                 is_interrupted.await;
@@ -43,6 +44,7 @@ fn main() -> io::Result<()> {
                     command: optimizer,
                     filter,
                     skip_to,
+                    save
                 }
                 .run()
                 .await?;
