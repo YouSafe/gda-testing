@@ -14,11 +14,11 @@ A description of them can be found in [GRAPHS.md](./GRAPHS.md)
 
 ## Test Runner
 
-Then run `cargo run graphs 'path/to/your/optimizer'`
+Then run `cargo run graphs --save 'path/to/your/optimizer'`
 
-If your optimizer requires a complex command, make sure to use quotes `cargo run graphs 'complex command --with --args`.
+If your optimizer requires a complex command, make sure to use quotes `cargo run graphs --save 'complex command --with --args`.
 
-This generates a `stats/optimizer-name.csv` file with some statistics.
+This generates a `stats/optimizer-name.csv` file with some statistics, and `save`s all the generated graphs to the `./saved` folder
 
 `cargo run leaderboard` takes those files and generates a leaderboard out of them!
 
