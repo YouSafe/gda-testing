@@ -3,7 +3,7 @@ use std::process::Stdio;
 use clap::builder::styling::{self, Style};
 use smol::{
     io::{self, AsyncBufReadExt, AsyncWriteExt, BufReader},
-    process::{Child, ChildStdin, ChildStdout, Command},
+    process::{Child, ChildStderr, ChildStdin, ChildStdout, Command},
     stream::StreamExt,
 };
 
@@ -11,6 +11,7 @@ use crate::graph::Graph;
 
 pub struct Optimizer {
     id: u32,
+    command: Vec<String>,
     /// The child process.
     /// It is not terminated when the optimizer is dropped (see smol docs).
     process: Child,
@@ -32,6 +33,10 @@ impl Optimizer {
         #[cfg(not(target_os = "windows"))] // For sane OSes
         let command = &shlex::split(&command).unwrap();
 
+        Self::from_command(id, command)
+    }
+
+    fn from_command(id: u32, command: Vec<String>) -> Self {
         let mut process = Command::new(&command[0])
             .args(command[1..].iter().map(|v| std::ffi::OsStr::new(v)))
             .stdin(Stdio::piped())
@@ -45,21 +50,44 @@ impl Optimizer {
 
         Self {
             id,
+            command,
             process,
             stdin,
             stdout,
         }
     }
 
+    pub fn restart(&mut self) -> impl Future<Output = io::Result<()>> + use<> {
+        let id = self.id;
+        let command = std::mem::take(&mut self.command);
+        let mut opt = Self::from_command(id, command);
+        std::mem::swap(self, &mut opt);
+
+        async move {
+            // Explicitly close the stdin of the old optimizer
+            opt.stdin.close().await?;
+            // And kill it
+            _ = opt
+                .process
+                .kill()
+                .inspect_err(|e| eprintln!("Killing the old optimizer failed {:?}", e));
+
+            // And the stderr will get killed after a while anyways
+            Ok(())
+        }
+    }
+
     /// Redirects stderr to this process's stdout
-    #[must_use]
-    pub fn redirect_stderr(&mut self) -> impl Future<Output = io::Result<()>> + use<> {
-        let child_stderr = self
-            .process
+    pub fn take_stderr(&mut self) -> ChildStderr {
+        self.process
             .stderr
             .take()
-            .expect("failed to get child stderr");
-        let mut lines = BufReader::new(child_stderr).lines();
+            .expect("failed to get child stderr")
+    }
+
+    #[must_use]
+    pub fn redirect_stderr(&mut self) -> impl Future<Output = io::Result<()>> + Send + use<> {
+        let mut lines = BufReader::new(self.take_stderr()).lines();
         let id = self.id;
         async move {
             while let Some(line) = lines.next().await {

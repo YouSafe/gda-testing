@@ -1,7 +1,7 @@
 use crate::{
     graph::Graph,
     leaderboard::stats::{GraphStats, ResultsWriter, RunStats},
-    optimizer_protocol::{Optimizer, OptimizerResponse},
+    optimizer_protocol::{LOG_INFO, Optimizer, OptimizerResponse},
 };
 use smol::{
     fs::{self, File, create_dir_all},
@@ -36,124 +36,141 @@ impl GraphsModeRunner {
         }
         let graphs_count = graphs.len();
 
-        async move {
-            let mut optimizer = Optimizer::new(&self.command, 1);
-            let redirect_stderr = optimizer.redirect_stderr();
-            let skip_to = self.skip_to.as_deref().unwrap_or_default();
+        let mut optimizer = Optimizer::new(&self.command, 1);
+        let skip_to = self.skip_to.as_deref().unwrap_or_default();
 
-            let run_optimizer = async move {
-                let team_name = optimizer.read_start().await?;
-                let mut results_file = ResultsWriter::new(&team_name)?;
-                let mut runs = vec![];
+        let (stderr_sender, stderr_receiver) =
+            smol::channel::bounded::<smol::process::ChildStderr>(2);
 
-                for (graph_index, (graph_path, graph_name)) in graphs
+        let stderr_redirector = async move {
+            while let Ok(child_stderr) = stderr_receiver.recv().await {
+                let mut lines = io::AsyncBufReadExt::lines(io::BufReader::new(child_stderr));
+                while let Some(line) = smol::stream::StreamExt::next(&mut lines).await {
+                    eprintln!("{LOG_INFO}[Optimizer] {}{LOG_INFO:#}", line?);
+                }
+            }
+
+            io::Result::Ok(())
+        };
+
+        let run_optimizer = async move {
+            stderr_sender.send(optimizer.take_stderr()).await.unwrap();
+
+            let team_name = optimizer.read_start().await?;
+            let mut results_file = ResultsWriter::new(&team_name)?;
+            let mut runs = vec![];
+
+            for (graph_index, (graph_path, graph_name)) in graphs
+                .into_iter()
+                .enumerate()
+                .skip_while(|(_, (_, name))| !name.contains(&skip_to))
+            {
+                println!(
+                    "\nOptimizing {} ({graph_index}/{graphs_count} graphs)",
+                    graph_path.display(),
+                );
+                let graph_bytes = fs::read(graph_path)
+                    .await?
                     .into_iter()
-                    .enumerate()
-                    .skip_while(|(_, (_, name))| !name.contains(&skip_to))
-                {
-                    println!(
-                        "\nOptimizing {} ({graph_index}/{graphs_count} graphs)",
-                        graph_path.display(),
-                    );
-                    let graph_bytes = fs::read(graph_path)
-                        .await?
-                        .into_iter()
-                        .map(|v| if v == b'\n' { b' ' } else { v })
-                        .collect::<Vec<_>>();
+                    .map(|v| if v == b'\n' { b' ' } else { v })
+                    .collect::<Vec<_>>();
 
-                    let input_graph: Graph = serde_json::from_slice(&graph_bytes)?;
+                let input_graph: Graph = serde_json::from_slice(&graph_bytes)?;
 
-                    optimizer.read_graph_request().await?;
+                optimizer.read_graph_request().await?;
 
-                    let start_time = Instant::now();
-                    optimizer.write_graph_bytes(&graph_bytes).await?;
+                let start_time = Instant::now();
+                optimizer.write_graph_bytes(&graph_bytes).await?;
 
-                    let (graph, mut result) = match optimizer.read_response().await? {
-                        OptimizerResponse::Graph { graph } => {
-                            let duration_ms = start_time.elapsed().as_millis() as u32;
-                            let max_per_edge = graph.crossings().max_per_edge;
-                            println!("Optimizer produced a graph with {max_per_edge} crossings");
-                            (
-                                graph,
-                                GraphStats {
-                                    graph: graph_name.clone(),
-                                    max_per_edge: Some(max_per_edge),
-                                    duration_ms,
-                                },
-                            )
-                        }
-                        OptimizerResponse::Done => {
-                            eprintln!("No graph was returned! Did the optimizer crash?");
-                            // TODO: Recreate the optimizer
-                            continue;
-                        }
-                        response => {
-                            return Err(io::Error::new(
-                                io::ErrorKind::InvalidData,
-                                format!("expected graph, but got {:?}", response),
-                            ));
-                        }
-                    };
-
-                    if let Err(e) = graph.is_valid() {
-                        result.max_per_edge = None;
-                        eprintln!("Graph {} was invalid! {}", result.graph, e);
+                let (graph, mut result) = match optimizer.read_response().await? {
+                    OptimizerResponse::Graph { graph } => {
+                        let duration_ms = start_time.elapsed().as_millis() as u32;
+                        let max_per_edge = graph.crossings().max_per_edge;
+                        println!("Optimizer produced a graph with {max_per_edge} crossings");
+                        (
+                            graph,
+                            GraphStats {
+                                graph: graph_name.clone(),
+                                max_per_edge: Some(max_per_edge),
+                                duration_ms,
+                            },
+                        )
                     }
-
-                    if input_graph.nodes.len() != graph.nodes.len() {
-                        result.max_per_edge = None;
-                        eprintln!(
-                            "Output graph doesn't have the same number of nodes! Input has {} nodes. Output has {} nodes.",
-                            input_graph.nodes.len(),
-                            graph.nodes.len(),
-                        );
+                    OptimizerResponse::Done => {
+                        eprintln!("No graph was returned! Did the optimizer crash?");
+                        optimizer.restart().await?;
+                        stderr_sender.send(optimizer.take_stderr()).await.unwrap();
+                        _ = optimizer.read_start().await?;
+                        continue;
                     }
-
-                    if input_graph.edges.len() != graph.edges.len() {
-                        result.max_per_edge = None;
-                        eprintln!(
-                            "Output graph doesn't have the same number of edges! Input has {} edges. Output has {} edges",
-                            input_graph.edges.len(),
-                            graph.edges.len(),
-                        );
+                    response => {
+                        return Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            format!("expected graph, but got {:?}", response),
+                        ));
                     }
+                };
 
-                    if !input_graph.is_isomorphic(&graph) {
-                        eprintln!(
-                            "Warning: Output graph did not trivially match the input graph. Did the nodes get relabeled, or did something worse happen?",
-                        );
-                    }
-
-                    if self.save {
-                        let mut path = PathBuf::from("./saved");
-                        path.push(&team_name.trim_start_matches('/'));
-                        path.push(&graph_name.trim_start_matches('/'));
-                        path.set_extension("json");
-
-                        if let Some(parent) = path.parent() {
-                            create_dir_all(parent).await?;
-                        }
-
-                        let file = File::create(&path).await?;
-                        let mut writer = BufWriter::new(file);
-                        let json_data = serde_json::to_vec_pretty(&graph)?;
-                        writer.write_all(&json_data).await?;
-                    }
-
-                    results_file.write_single_run(&result)?;
-
-                    runs.push(result);
+                if let Err(e) = graph.is_valid() {
+                    result.max_per_edge = None;
+                    eprintln!("Graph {} was invalid! {}", result.graph, e);
                 }
 
-                results_file.flush()?;
+                if input_graph.nodes.len() != graph.nodes.len() {
+                    result.max_per_edge = None;
+                    eprintln!(
+                        "Output graph doesn't have the same number of nodes! Input has {} nodes. Output has {} nodes.",
+                        input_graph.nodes.len(),
+                        graph.nodes.len(),
+                    );
+                }
 
-                io::Result::Ok(RunStats {
-                    name: team_name,
-                    runs,
-                })
-            };
+                if input_graph.edges.len() != graph.edges.len() {
+                    result.max_per_edge = None;
+                    eprintln!(
+                        "Output graph doesn't have the same number of edges! Input has {} edges. Output has {} edges",
+                        input_graph.edges.len(),
+                        graph.edges.len(),
+                    );
+                }
 
-            let (runs, b) = future::zip(run_optimizer, redirect_stderr).await;
+                if !input_graph.is_isomorphic(&graph) {
+                    eprintln!(
+                        "Warning: Output graph did not trivially match the input graph. Did the nodes get relabeled, or did something worse happen?",
+                    );
+                }
+
+                if self.save {
+                    let mut path = PathBuf::from("./saved");
+                    path.push(&team_name.trim_start_matches('/'));
+                    path.push(&graph_name.trim_start_matches('/'));
+                    path.set_extension("json");
+
+                    if let Some(parent) = path.parent() {
+                        create_dir_all(parent).await?;
+                    }
+
+                    let file = File::create(&path).await?;
+                    let mut writer = BufWriter::new(file);
+                    let json_data = serde_json::to_vec(&graph)?;
+                    writer.write_all(&json_data).await?;
+                }
+
+                results_file.write_single_run(&result)?;
+
+                runs.push(result);
+            }
+
+            results_file.flush()?;
+
+            io::Result::Ok(RunStats {
+                name: team_name,
+                runs,
+            })
+        };
+
+        async move {
+            let (runs, b) = future::zip(run_optimizer, stderr_redirector).await;
             let (runs, _) = (runs?, b?);
             Ok(runs)
         }
@@ -199,6 +216,6 @@ fn collect_graphs(dir: &Path) -> std::io::Result<Vec<(PathBuf, String)>> {
 
     let mut graphs = Vec::new();
     collect_graphs_rec(dir, "", &mut graphs)?;
-    graphs.sort(); // TODO: Use a number aware sorter here
+    graphs.sort(); // TODO: Use a number aware and case insensitive sorter here
     Ok(graphs)
 }
