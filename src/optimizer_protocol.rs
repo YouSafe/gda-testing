@@ -1,4 +1,4 @@
-use std::process::Stdio;
+use std::process::{ExitStatus, Stdio};
 
 use clap::builder::styling::{self, Style};
 use smol::{
@@ -31,7 +31,7 @@ impl Optimizer {
         #[cfg(target_os = "windows")] // For Windows with its backslashes
         let command = winsplit::split(&command);
         #[cfg(not(target_os = "windows"))] // For sane OSes
-        let command = &shlex::split(&command).unwrap();
+        let command = shlex::split(&command).unwrap();
 
         Self::from_command(id, command)
     }
@@ -124,8 +124,9 @@ impl Optimizer {
                 let mut line = String::new();
                 self.stdout.read_line(&mut line).await?;
                 if line.len() == 0 {
-                    if !matches!(self.process.try_status(), Ok(None)) {
-                        return Ok(OptimizerResponse::Done);
+                    let status = self.process.try_status();
+                    if !matches!(status, Ok(None)) {
+                        return Ok(OptimizerResponse::NoResponse(status.ok().flatten()));
                     }
                     continue;
                 }
@@ -209,7 +210,7 @@ pub enum OptimizerResponse {
     Start { name: String },
     GraphRequest,
     Graph { graph: Graph },
-    Done,
+    NoResponse(Option<ExitStatus>),
 }
 
 pub trait AllOk<T, E> {

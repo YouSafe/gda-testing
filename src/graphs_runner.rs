@@ -96,8 +96,11 @@ impl GraphsModeRunner {
                             },
                         )
                     }
-                    OptimizerResponse::Done => {
+                    OptimizerResponse::NoResponse(exit_status) => {
                         eprintln!("No graph was returned! Did the optimizer crash?");
+                        if let Some(exit_status) = exit_status {
+                            eprintln!("Exit status: {}", exit_status);
+                        }
                         optimizer.restart().await?;
                         stderr_sender.send(optimizer.take_stderr()).await.unwrap();
                         _ = optimizer.read_start().await?;
