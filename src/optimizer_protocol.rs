@@ -31,7 +31,7 @@ impl Optimizer {
         #[cfg(target_os = "windows")] // For Windows with its backslashes
         let command = winsplit::split(&command);
         #[cfg(not(target_os = "windows"))] // For sane OSes
-        let command = &shlex::split(&command).unwrap();
+        let command = shlex::split(&command).unwrap();
 
         Self::from_command(id, command)
     }
