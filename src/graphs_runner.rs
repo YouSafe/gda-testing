@@ -154,6 +154,8 @@ impl GraphsModeRunner {
                     let mut writer = BufWriter::new(file);
                     let json_data = serde_json::to_vec(&graph)?;
                     writer.write_all(&json_data).await?;
+                    writer.flush().await?;
+                    std::mem::drop(writer);
                 }
 
                 results_file.write_single_run(&result)?;
