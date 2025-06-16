@@ -133,6 +133,7 @@ impl Graph {
 
         // To deal with a nodes array that is not sorted by the id
         let mut id_to_idx = vec![None; num_nodes];
+        let mut nodes_defined = 0;
         for (idx, node) in self.nodes.iter().enumerate() {
             if id_to_idx[node.id].is_some() {
                 return Err(serde_json::Error::custom(format!(
@@ -141,6 +142,13 @@ impl Graph {
                 )));
             }
             id_to_idx[node.id] = Some(idx);
+            nodes_defined += 1;
+        }
+
+        if nodes_defined != num_nodes {
+            return Err(serde_json::Error::custom(format!(
+                "Node ID domain mismatch: expected {num_nodes} unique IDs, found {nodes_defined}",
+            )));
         }
 
         for edge in &self.edges {
