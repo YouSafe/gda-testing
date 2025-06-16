@@ -131,6 +131,18 @@ impl Graph {
             coordinates.insert((node.x, node.y), node.id);
         }
 
+        // To deal with a nodes array that is not sorted by the id
+        let mut id_to_idx = vec![None; num_nodes];
+        for (idx, node) in self.nodes.iter().enumerate() {
+            if id_to_idx[node.id].is_some() {
+                return Err(serde_json::Error::custom(format!(
+                    "Node {} is defined more than once",
+                    node.id,
+                )));
+            }
+            id_to_idx[node.id] = Some(idx);
+        }
+
         for edge in &self.edges {
             if edge.source >= num_nodes {
                 return Err(serde_json::Error::custom(format!(
@@ -152,8 +164,13 @@ impl Graph {
                     continue;
                 }
 
-                let from = &self.nodes[edge.source];
-                let to = &self.nodes[edge.target];
+                // We expect the IDs to be valid at this point, since we have validated that all
+                // nodes are uniquely defined and that there are `num_nodes` many nodes.
+                let source_idx = id_to_idx[edge.source].expect("Invalid edge source id");
+                let target_idx = id_to_idx[edge.target].expect("Invalid edge target id");
+
+                let from = &self.nodes[source_idx];
+                let to = &self.nodes[target_idx];
 
                 if !is_between((from.x, from.y), (node.x, node.y), (to.x, to.y)) {
                     continue;
@@ -161,8 +178,16 @@ impl Graph {
 
                 if is_collinear((from.x, from.y), (node.x, node.y), (to.x, to.y)) {
                     return Err(serde_json::Error::custom(format!(
-                        "Node {} is collinear with edge from node {} to node {} at coordinates ({}, {})",
-                        node.id, edge.source, edge.target, node.x, node.y
+                        "Node {} is collinear with edge from node {} ({},{}) to node {} ({},{}) at coordinates ({}, {})",
+                        node.id,
+                        edge.source,
+                        from.x,
+                        from.y,
+                        edge.target,
+                        to.x,
+                        to.y,
+                        node.x,
+                        node.y
                     )));
                 }
             }
